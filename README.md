@@ -1,6 +1,6 @@
 # @mrlisting/api
 
-Connect a directory frontend to the [MrListing](../README.md) API.
+Connect a directory frontend to the MrListing API.
 
 No runtime dependencies, TypeScript types included, works in Node 18+, Bun, Deno and edge runtimes.
 
@@ -32,7 +32,7 @@ const { items, pagination } = await api.listings.index({ q: "elmau", page: 1 })
 const entry = await api.listings.show("schloss-elmau")
 ```
 
-Namespaces mirror the API's resources, and the verbs are the API's own: `index`, `show`, `create`, `update`.
+Namespaces mirror the API's resources, and the verbs are the API's own: `index`, `show`, `update`, `submit`.
 
 ## Content
 
@@ -41,6 +41,7 @@ await api.listings.index({ q, category, city, page, per_page })  // → { items,
 await api.listings.show(slug)
 await api.categories.index()
 await api.cities.index()
+await api.listingTypes.index()   // → [{ key, name, position }] for labels and type filters
 await api.site.show()
 await api.site.sitemap()
 ```
@@ -61,6 +62,20 @@ export default function sitemapRoutes() {
 }
 ```
 
+## Structured data
+
+Directories can define their own record schemas — shareholders, menu items, opening hours. A schema only appears here after an administrator switched it to "shown on the public API"; everything else stays private.
+
+```ts
+const schemas = await api.schemas.index()
+// → [{ key, name, description, cardinality, position, fields: [{ key, label, field_type, … }] }]
+
+const groups = await api.listings.records("acme-gmbh")
+// → [{ schema: { key, name, cardinality }, records: [{ id, title, values }] }]
+```
+
+`values` is keyed by field key and typed per the field — numbers as numbers, dates as ISO strings, multi-selects as arrays, images as URLs. Unanswered fields are absent; use the schema for the full field list.
+
 ## Forms
 
 Render what the directory configured rather than hard-coding a form:
@@ -80,6 +95,52 @@ await api.forms.submit("contact", {
 ```
 
 A `regional_inquiry` form reaches every matching entry owner; a `direct_inquiry` reaches the one it was sent from. Which fields are matched on is the directory's configuration, not yours.
+
+## Reviews
+
+```ts
+const { items, pagination, summary } = await api.listings.reviews("schloss-elmau", { page: 1 })
+// summary → { rating_average, reviews_count } for the profile header
+```
+
+Reviews are written through invitation links the entry's owner sends. The token in the link is the credential, so no sign-in is needed — and each link works exactly once:
+
+```ts
+const landing = await api.reviews.showRequest(token)   // → { listing, recipient_name, open }
+
+if (landing.open) {
+  await api.reviews.submitFromRequest(token, { rating: 5, title: "Lovely", body: "Everything was easy." })
+}
+```
+
+A signed-in owner asks their own customers from your frontend:
+
+```ts
+await api.withUser(ownerToken).me.requestReview("schloss-elmau", {
+  email: "kunde@example.com",
+  name: "Anna",
+})
+```
+
+The same person cannot be asked again until a cooldown passes; the API answers `422` if it is too soon.
+
+## Lead questions
+
+Directories can configure questions to ask right after signup — what someone is planning, where, when. Render what you are told; the server decides what it accepts:
+
+```ts
+const questions = await api.leadQuestions.index()
+// → [{ key, question, hint, field_type, required, options, position }]
+
+await api.withUser(token).me.submitLeadAnswers({
+  planning: "A wedding",          // single_choice: one of question.options
+  regions: ["Berlin", "Potsdam"], // multiple_choice: any of question.options
+  budget_known: true,             // boolean
+  notes: "Outdoor if possible",   // free_text
+})
+```
+
+Submissions are all-or-nothing: either every answer is acceptable, or nothing is stored. Answering again overwrites, so re-submitting is safe.
 
 ## Signing users in
 
@@ -128,7 +189,52 @@ const { checkout_url } = await api.withUser(token).products.checkout(product.id,
 redirect(checkout_url)
 ```
 
-Who may buy is decided server-side: a product meant for entry owners is never listed to a plain visitor. Payment is confirmed by Stripe's webhook to the directory, never by the buyer's return trip — so treat your success page as "thanks", not as "paid".
+Who may buy is decided server-side: a product meant for entry owners is never listed to a plain visitor. Payment is confirmed by Stripe's webhook to the directory, never by the buyer's return trip — so on your success page, read the purchase back instead of trusting the redirect:
+
+```ts
+const { checkout_url, purchase_id } = await api.withUser(token).products.checkout(product.id, {
+  successUrl: "https://example.com/thanks",
+})
+// Remember purchase_id (session or cookie), then redirect(checkout_url).
+// successUrl/cancelUrl must be on the directory's primary domain; anything else
+// is replaced with the directory's own default return pages.
+
+// On the success page (server-side):
+const purchase = await api.withUser(token).me.purchase(purchase_id)
+
+if (purchase.status === "paid") unlock()
+else if (purchase.status === "pending") showProcessing() // the webhook may still be on its way
+```
+
+Purchase history, newest first:
+
+```ts
+const { items, pagination } = await api.withUser(token).me.purchases({ page: 1 })
+// each → { id, status, amount_cents, currency, amount_formatted, completed_at, product }
+```
+
+`status` is one of `pending`, `paid`, `failed`, `refunded`. Stripe identifiers never appear in these payloads: your frontend talks to MrListing about payments, never to Stripe.
+
+### Subscriptions
+
+A recurring product's checkout starts a subscription. The directory mirrors its life through Stripe's webhook, and your frontend reads the mirror:
+
+```ts
+const { items } = await api.withUser(token).me.subscriptions()
+// each → { id, status, cancel_at_period_end, current_period_end, product }
+
+const sub = await api.withUser(token).me.subscription(id)
+if (sub.status === "active" || sub.status === "trialing") showMemberArea()
+```
+
+Cancelling schedules the stop for the period's end — what was paid for stays available until then:
+
+```ts
+const ending = await api.withUser(token).me.cancelSubscription(id)
+// ending.cancel_at_period_end === true; status flips to "canceled" via webhook later
+```
+
+`status` follows Stripe's vocabulary: `incomplete`, `trialing`, `active`, `past_due`, `unpaid`, `paused`, `canceled`.
 
 ## Errors
 

@@ -1,6 +1,6 @@
 import { resource } from "../http.js"
 import type {
-  CollectionEnvelope, Envelope, Listing, ListingCard, ListingQuery, Page, Transport,
+  CollectionEnvelope, Envelope, Listing, ListingCard, ListingQuery, Page, RecordGroup, Transport,
 } from "../types.js"
 
 const path = "listings"
@@ -34,4 +34,16 @@ export async function claim(transport: Transport, slug: string, userToken?: stri
   )
 }
 
-export default { index, show, claim }
+/**
+ * One entry's structured data, grouped by schema — only from schemas the
+ * directory published. Render one section per group.
+ */
+export async function records(transport: Transport, slug: string): Promise<RecordGroup[]> {
+  const payload = await transport.get<CollectionEnvelope<RecordGroup>>(
+    `${path}/${encodeURIComponent(slug)}/records`,
+  )
+
+  return payload.collection
+}
+
+export default { index, show, claim, records }

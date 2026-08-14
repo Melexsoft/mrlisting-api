@@ -240,3 +240,172 @@ export interface ListingQuery {
   page?: number | undefined
   per_page?: number | undefined
 }
+
+export interface PageQuery {
+  page?: number | undefined
+  per_page?: number | undefined
+}
+
+export interface Review {
+  rating: number
+  title: string | null
+  body: string | null
+  created_at: string
+  /** Falls back to "Anonymous" when the reviewer left no name. */
+  author: string
+  /** Whether the review came from an invitation the owner sent. */
+  verified: boolean
+}
+
+export interface ReviewSummary {
+  rating_average: number | null
+  reviews_count: number
+}
+
+/** What a review invitation link resolves to before anyone writes anything. */
+export interface ReviewRequestLanding {
+  listing: ListingCard
+  recipient_name: string | null
+  /** False once the link has been used or withdrawn. */
+  open: boolean
+}
+
+export interface ReviewInput {
+  rating: number
+  title?: string | undefined
+  body?: string | undefined
+  author_name?: string | undefined
+}
+
+export interface ReviewRequestReceipt {
+  email: string
+  status: string
+}
+
+export type PurchaseStatus = "pending" | "paid" | "failed" | "refunded"
+
+export interface Purchase {
+  id: number
+  status: PurchaseStatus
+  amount_cents: number
+  currency: string
+  amount_formatted: string
+  completed_at: string | null
+  created_at: string
+  product: {
+    id: number
+    name: string
+    billing_mode: "one_time" | "recurring"
+    recurring: boolean
+  }
+}
+
+export interface ListingType {
+  key: string
+  name: string
+  position: number
+}
+
+export type LeadQuestionFieldType = "single_choice" | "multiple_choice" | "free_text" | "boolean"
+
+export interface LeadQuestion {
+  key: string
+  question: string
+  hint: string | null
+  field_type: LeadQuestionFieldType
+  required: boolean
+  position: number
+  /** Empty unless the question is a choice question. */
+  options: string[]
+}
+
+export type LeadAnswerValue = string | string[] | boolean | null
+
+export interface LeadAnswersReceipt {
+  saved: string[]
+}
+
+export type SubscriptionStatus =
+  | "incomplete"
+  | "trialing"
+  | "active"
+  | "past_due"
+  | "unpaid"
+  | "paused"
+  | "canceled"
+
+export interface Subscription {
+  id: number
+  status: SubscriptionStatus
+  /** True once a cancellation is scheduled; access lasts until the period ends. */
+  cancel_at_period_end: boolean
+  current_period_end: string | null
+  canceled_at: string | null
+  created_at: string
+  product: {
+    id: number
+    name: string
+    price_cents: number
+    currency: string
+    price_formatted: string
+  }
+}
+
+export type SchemaCardinality = "one_to_one" | "one_to_many" | "many_to_many"
+
+export type SchemaFieldType =
+  | "string"
+  | "text"
+  | "url"
+  | "email"
+  | "phone"
+  | "number"
+  | "date"
+  | "boolean"
+  | "select"
+  | "multi_select"
+  | "image"
+
+export interface SchemaField {
+  key: string
+  label: string
+  hint: string | null
+  field_type: SchemaFieldType
+  required: boolean
+  /** Empty unless the field is a choice field. */
+  options: string[]
+  position: number
+}
+
+/** A structured-data schema this directory chose to expose. */
+export interface Schema {
+  key: string
+  name: string
+  description: string | null
+  cardinality: SchemaCardinality
+  position: number
+  fields: SchemaField[]
+}
+
+/**
+ * One answer, in a JSON-friendly spelling per field type: numbers as numbers,
+ * dates as ISO strings, multi-selects as arrays, images as URLs.
+ */
+export type RecordValue = string | number | boolean | string[] | null
+
+export interface ListingRecord {
+  id: number
+  title: string
+  /** Only answered fields appear; the schema is the full field list. */
+  values: Record<string, RecordValue>
+}
+
+/** One published schema's records on one listing. */
+export interface RecordGroup {
+  schema: {
+    key: string
+    name: string
+    cardinality: SchemaCardinality
+  }
+  records: ListingRecord[]
+}

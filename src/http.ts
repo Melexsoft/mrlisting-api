@@ -20,7 +20,7 @@ export function createTransport(config: {
 
   if (typeof doFetch !== "function") {
     throw new Error(
-      "No fetch implementation available. Pass one via createClient({ fetch }) on Node < 18.",
+      "No fetch implementation available. Pass one via mrlisting({ fetch }) on Node < 18.",
     )
   }
 

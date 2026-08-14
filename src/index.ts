@@ -3,12 +3,20 @@ import * as categories from "./endpoints/categories.js"
 import * as cities from "./endpoints/cities.js"
 import * as claims from "./endpoints/claims.js"
 import * as forms from "./endpoints/forms.js"
+import * as leadQuestions from "./endpoints/leadQuestions.js"
 import * as listings from "./endpoints/listings.js"
+import * as listingTypes from "./endpoints/listingTypes.js"
 import * as me from "./endpoints/me.js"
 import * as products from "./endpoints/products.js"
+import * as purchases from "./endpoints/purchases.js"
+import * as reviews from "./endpoints/reviews.js"
+import * as schemas from "./endpoints/schemas.js"
 import * as site from "./endpoints/site.js"
+import * as subscriptions from "./endpoints/subscriptions.js"
 import { createTransport } from "./http.js"
-import type { ClientConfig, ListingQuery, Transport } from "./types.js"
+import type {
+  ClientConfig, LeadAnswerValue, ListingQuery, PageQuery, Transport,
+} from "./types.js"
 
 export { ApiError } from "./errors.js"
 export type * from "./types.js"
@@ -47,6 +55,29 @@ function buildClient(transport: Transport, config: ClientConfig) {
       index: (query?: ListingQuery) => listings.index(transport, query),
       show: (slug: string) => listings.show(transport, slug),
       claim: (slug: string, userToken?: string) => listings.claim(transport, slug, userToken),
+      reviews: (slug: string, query?: PageQuery) => reviews.forListing(transport, slug, query),
+      records: (slug: string) => listings.records(transport, slug),
+    },
+
+    /** Structured-data schemas the directory chose to expose. */
+    schemas: {
+      index: () => schemas.index(transport),
+    },
+
+    /** Reading and leaving reviews through an invitation link. */
+    reviews: {
+      showRequest: (token: string) => reviews.showRequest(transport, token),
+      submitFromRequest: (token: string, input: Parameters<typeof reviews.submitFromRequest>[2]) =>
+        reviews.submitFromRequest(transport, token, input),
+    },
+
+    listingTypes: {
+      index: () => listingTypes.index(transport),
+    },
+
+    /** The questions this directory asks right after signup. */
+    leadQuestions: {
+      index: () => leadQuestions.index(transport),
     },
 
     categories: {
@@ -73,7 +104,7 @@ function buildClient(transport: Transport, config: ClientConfig) {
         auth.resetPassword(transport, input),
     },
 
-    /** The signed-in user's own profile and entries. */
+    /** The signed-in user's own profile, entries, purchases and answers. */
     me: {
       show: (userToken?: string) => me.show(transport, userToken),
       update: (input: Parameters<typeof me.update>[1], userToken?: string) =>
@@ -81,6 +112,18 @@ function buildClient(transport: Transport, config: ClientConfig) {
       listings: (userToken?: string) => me.listings(transport, userToken),
       updateListing: (slug: string, input: Record<string, unknown>, userToken?: string) =>
         me.updateListing(transport, slug, input, userToken),
+      requestReview: (slug: string, input: Parameters<typeof me.requestReview>[2], userToken?: string) =>
+        me.requestReview(transport, slug, input, userToken),
+      purchases: (query?: PageQuery, userToken?: string) =>
+        purchases.index(transport, query, userToken),
+      purchase: (id: number, userToken?: string) => purchases.show(transport, id, userToken),
+      subscriptions: (query?: PageQuery, userToken?: string) =>
+        subscriptions.index(transport, query, userToken),
+      subscription: (id: number, userToken?: string) => subscriptions.show(transport, id, userToken),
+      cancelSubscription: (id: number, userToken?: string) =>
+        subscriptions.cancel(transport, id, userToken),
+      submitLeadAnswers: (answers: Record<string, LeadAnswerValue>, userToken?: string) =>
+        leadQuestions.submitAnswers(transport, answers, userToken),
     },
 
     claims: {

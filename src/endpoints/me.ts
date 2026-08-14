@@ -1,5 +1,7 @@
 import { resource } from "../http.js"
-import type { CollectionEnvelope, DirectoryUser, Envelope, OwnedListing, Transport } from "../types.js"
+import type {
+  CollectionEnvelope, DirectoryUser, Envelope, OwnedListing, ReviewRequestReceipt, Transport,
+} from "../types.js"
 
 /** The signed-in user's own profile. */
 export async function show(transport: Transport, userToken?: string): Promise<DirectoryUser> {
@@ -41,4 +43,22 @@ export async function updateListing(
   )
 }
 
-export default { show, update, listings, updateListing }
+/**
+ * Ask one of this owner's own customers for a review. The invitation is mailed
+ * immediately, and the same person cannot be asked again until a cooldown passes.
+ */
+export async function requestReview(
+  transport: Transport,
+  slug: string,
+  input: { email: string; name?: string | undefined },
+  userToken?: string,
+): Promise<ReviewRequestReceipt> {
+  return resource(
+    await transport.post<Envelope<ReviewRequestReceipt>>(
+      `me/listings/${encodeURIComponent(slug)}/review_requests`,
+      { body: { review_request: input }, userToken },
+    ),
+  )
+}
+
+export default { show, update, listings, updateListing, requestReview }

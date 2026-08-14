@@ -1,6 +1,6 @@
 {
   "name": "@mrlisting/api",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Connect a directory frontend to the MrListing API",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -13,9 +13,15 @@
       "require": "./dist/index.cjs"
     }
   },
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "sideEffects": false,
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -24,11 +30,21 @@
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run typecheck && npm run test && npm run build"
   },
-  "repository": { "type": "git", "url": "git+https://github.com/Melexsoft/mrlisting-api.git" },
-  "keywords": ["api", "directory", "listings", "mrlisting"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Melexsoft/mrlisting-api.git"
+  },
+  "keywords": [
+    "api",
+    "directory",
+    "listings",
+    "mrlisting"
+  ],
   "author": "Ferhat Ziba",
   "license": "MIT",
-  "publishConfig": { "access": "public" },
+  "publishConfig": {
+    "access": "public"
+  },
   "devDependencies": {
     "tsup": "^8.3.5",
     "typescript": "^5.7.2",
