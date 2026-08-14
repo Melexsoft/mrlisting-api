@@ -10,6 +10,9 @@ Everything the API already served that the client could not reach.
 - Lead questions: `leadQuestions.index()` and `me.submitLeadAnswers({ key: value })`, all-or-nothing and safe to re-submit
 - Subscriptions: `me.subscriptions()`, `me.subscription(id)` and `me.cancelSubscription(id)` — cancellation is scheduled for the period's end, and the status mirrors Stripe's own vocabulary
 - Structured data: `schemas.index()` lists the schemas a directory chose to expose, `listings.records(slug)` reads one entry's records grouped by schema, values typed per field
+- Structured-data search: `listings.search({ schema, q, filters })` finds the entries whose records match, with typed operators (`contains`/`eq`/`gt`/`lt`/`before`/`after`/`present`)
+- `me.leadAnswers()` reads back what the user answered, for prefilling
+- Every list endpoint now carries the same `pagination` envelope; the small reference collections stay whole by default and page the moment `page`/`per_page` is sent
 - New types: `Review`, `ReviewSummary`, `ReviewRequestLanding`, `ReviewInput`, `Purchase`, `PurchaseStatus`, `Subscription`, `SubscriptionStatus`, `ListingType`, `LeadQuestion`, `Schema`, `SchemaField`, `RecordGroup`, `PageQuery`
 - Fixed: the no-fetch error message named a `createClient` export that does not exist
 

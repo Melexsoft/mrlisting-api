@@ -180,6 +180,47 @@ describe("schemas and records", () => {
     expect(schemas[0]?.fields[0]?.key).toBe("name")
   })
 
+  it("searches listings by structured data", async () => {
+    const { api, calls } = client([
+      {
+        body: {
+          collection: [ { slug: "acme-gmbh", name: "Acme GmbH" } ],
+          pagination: { current: 1, previous: null, next: null, per_page: 25, pages: 1, count: 1 },
+          filters: { schema: "shareholders" },
+        },
+      },
+    ])
+
+    const { items, filters } = await api.listings.search({
+      schema: "shareholders",
+      q: "anna",
+      filters: [ { field: "share_percent", operator: "gt", value: 25 } ],
+    })
+
+    expect(calls[0]?.url).toContain("listings/search")
+    expect(calls[0]?.init.method).toBe("POST")
+    expect(JSON.parse(String(calls[0]?.init.body))).toEqual({
+      schema: "shareholders",
+      q: "anna",
+      filters: [ { field: "share_percent", operator: "gt", value: 25 } ],
+    })
+    expect(items[0]?.slug).toBe("acme-gmbh")
+    expect(filters).toEqual({ schema: "shareholders" })
+  })
+
+  it("relays the server's verdict on a filter it refuses", async () => {
+    const { api } = client([
+      { status: 422, body: { errors: [ "There is no field 'salary' in this schema." ] } },
+    ])
+
+    const error = await failure(api.listings.search({
+      schema: "shareholders",
+      filters: [ { field: "salary", value: "1" } ],
+    }))
+
+    expect(error.isValidationError).toBe(true)
+  })
+
   it("reads an entry's records grouped by schema", async () => {
     const { api, calls } = client([
       {
@@ -218,6 +259,19 @@ describe("lead questions", () => {
 
     expect(calls[0]?.url).toContain("lead_questions")
     expect(questions[0]?.options).toContain("A wedding")
+  })
+
+  it("reads back what the user answered, for prefilling", async () => {
+    const { api, calls } = client(
+      [ { body: { resource: { answers: { planning: "A wedding", notes: "Outdoor" } } } } ],
+      "user-jwt",
+    )
+
+    const answers = await api.me.leadAnswers()
+
+    expect(calls[0]?.url).toContain("me/lead_answers")
+    expect(calls[0]?.init.method).toBe("GET")
+    expect(answers).toEqual({ planning: "A wedding", notes: "Outdoor" })
   })
 
   it("submits answers keyed by question key", async () => {

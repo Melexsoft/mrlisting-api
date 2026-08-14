@@ -76,6 +76,20 @@ const groups = await api.listings.records("acme-gmbh")
 
 `values` is keyed by field key and typed per the field — numbers as numbers, dates as ISO strings, multi-selects as arrays, images as URLs. Unanswered fields are absent; use the schema for the full field list.
 
+### Searching by structured data
+
+Find the entries whose records match — "companies with a shareholder over 25%":
+
+```ts
+const { items, pagination } = await api.listings.search({
+  schema: "shareholders",                                          // required, must be published
+  q: "anna",                                                       // optional free text
+  filters: [{ field: "share_percent", operator: "gt", value: 25 }],
+})
+```
+
+Operators: `contains` (default), `eq`, `gt`, `lt` (numbers), `before`, `after` (dates), `present`. Every filter must hold, each judged on its own record. An unknown field or operator answers `422` instead of silently matching nothing.
+
 ## Forms
 
 Render what the directory configured rather than hard-coding a form:
@@ -138,6 +152,9 @@ await api.withUser(token).me.submitLeadAnswers({
   budget_known: true,             // boolean
   notes: "Outdoor if possible",   // free_text
 })
+
+const answers = await api.withUser(token).me.leadAnswers()
+// → { planning: "A wedding", … } — prefill, or skip what is already answered
 ```
 
 Submissions are all-or-nothing: either every answer is acceptable, or nothing is stored. Answering again overwrites, so re-submitting is safe.

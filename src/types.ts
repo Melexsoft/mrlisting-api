@@ -409,3 +409,31 @@ export interface RecordGroup {
   }
   records: ListingRecord[]
 }
+
+export type ListingSearchOperator =
+  | "contains"
+  | "eq"
+  | "gt"
+  | "lt"
+  | "before"
+  | "after"
+  | "present"
+
+export interface ListingSearchFilter {
+  /** A field key from the schema being searched. */
+  field: string
+  /** Defaults to "contains". gt/lt compare numbers; before/after compare dates. */
+  operator?: ListingSearchOperator | undefined
+  value?: string | number | undefined
+}
+
+export interface ListingSearchInput {
+  /** The published schema to search in — required. */
+  schema: string
+  /** Free text, matched against record titles and answers. */
+  q?: string | undefined
+  /** Every filter must hold, each judged on its own record. */
+  filters?: ListingSearchFilter[] | undefined
+  page?: number | undefined
+  per_page?: number | undefined
+}

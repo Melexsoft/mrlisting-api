@@ -14,6 +14,23 @@ export async function index(transport: Transport): Promise<LeadQuestion[]> {
 }
 
 /**
+ * What the signed-in user has answered so far, keyed by question key — for
+ * prefilling the form or skipping questions that are already answered.
+ */
+export async function answers(
+  transport: Transport,
+  userToken?: string,
+): Promise<Record<string, LeadAnswerValue>> {
+  const payload = resource(
+    await transport.get<Envelope<{ answers: Record<string, LeadAnswerValue> }>>("me/lead_answers", {
+      userToken,
+    }),
+  )
+
+  return payload.answers
+}
+
+/**
  * Store the signed-in user's answers, keyed by question key. All-or-nothing:
  * either every answer is acceptable, or nothing is stored. Answering again
  * overwrites, so re-submitting is safe.
@@ -31,4 +48,4 @@ export async function submitAnswers(
   )
 }
 
-export default { index, submitAnswers }
+export default { index, answers, submitAnswers }

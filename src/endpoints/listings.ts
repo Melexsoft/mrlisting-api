@@ -1,6 +1,7 @@
 import { resource } from "../http.js"
 import type {
-  CollectionEnvelope, Envelope, Listing, ListingCard, ListingQuery, Page, RecordGroup, Transport,
+  CollectionEnvelope, Envelope, Listing, ListingCard, ListingQuery, ListingSearchInput,
+  Page, RecordGroup, Transport,
 } from "../types.js"
 
 const path = "listings"
@@ -35,6 +36,28 @@ export async function claim(transport: Transport, slug: string, userToken?: stri
 }
 
 /**
+ * Search by structured data: entries whose records in one published schema
+ * match. A POST because the filters are structured, but nothing is written.
+ *
+ * ```ts
+ * await api.listings.search({
+ *   schema: "shareholders",
+ *   filters: [{ field: "share_percent", operator: "gt", value: 25 }],
+ * })
+ * ```
+ */
+export async function search(
+  transport: Transport,
+  input: ListingSearchInput,
+): Promise<Page<ListingCard>> {
+  const payload = await transport.post<CollectionEnvelope<ListingCard>>(`${path}/search`, {
+    body: input,
+  })
+
+  return { items: payload.collection, pagination: payload.pagination, filters: payload.filters }
+}
+
+/**
  * One entry's structured data, grouped by schema — only from schemas the
  * directory published. Render one section per group.
  */
@@ -46,4 +69,4 @@ export async function records(transport: Transport, slug: string): Promise<Recor
   return payload.collection
 }
 
-export default { index, show, claim, records }
+export default { index, show, claim, search, records }

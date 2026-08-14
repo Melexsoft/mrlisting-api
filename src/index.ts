@@ -57,6 +57,7 @@ function buildClient(transport: Transport, config: ClientConfig) {
       claim: (slug: string, userToken?: string) => listings.claim(transport, slug, userToken),
       reviews: (slug: string, query?: PageQuery) => reviews.forListing(transport, slug, query),
       records: (slug: string) => listings.records(transport, slug),
+      search: (input: Parameters<typeof listings.search>[1]) => listings.search(transport, input),
     },
 
     /** Structured-data schemas the directory chose to expose. */
@@ -122,6 +123,7 @@ function buildClient(transport: Transport, config: ClientConfig) {
       subscription: (id: number, userToken?: string) => subscriptions.show(transport, id, userToken),
       cancelSubscription: (id: number, userToken?: string) =>
         subscriptions.cancel(transport, id, userToken),
+      leadAnswers: (userToken?: string) => leadQuestions.answers(transport, userToken),
       submitLeadAnswers: (answers: Record<string, LeadAnswerValue>, userToken?: string) =>
         leadQuestions.submitAnswers(transport, answers, userToken),
     },
