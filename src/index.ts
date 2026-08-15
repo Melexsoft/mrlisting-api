@@ -1,7 +1,9 @@
+import * as articles from "./endpoints/articles.js"
 import * as auth from "./endpoints/auth.js"
 import * as categories from "./endpoints/categories.js"
 import * as cities from "./endpoints/cities.js"
 import * as claims from "./endpoints/claims.js"
+import * as conversations from "./endpoints/conversations.js"
 import * as forms from "./endpoints/forms.js"
 import * as leadQuestions from "./endpoints/leadQuestions.js"
 import * as listings from "./endpoints/listings.js"
@@ -15,7 +17,7 @@ import * as site from "./endpoints/site.js"
 import * as subscriptions from "./endpoints/subscriptions.js"
 import { createTransport } from "./http.js"
 import type {
-  ClientConfig, LeadAnswerValue, ListingQuery, PageQuery, Transport,
+  ArticleQuery, ClientConfig, LeadAnswerValue, ListingQuery, PageQuery, Transport,
 } from "./types.js"
 
 export { ApiError } from "./errors.js"
@@ -85,6 +87,12 @@ function buildClient(transport: Transport, config: ClientConfig) {
       index: () => categories.index(transport),
     },
 
+    /** Published editorial content: blog, glossar, documentation, news. */
+    articles: {
+      index: (query?: ArticleQuery) => articles.index(transport, query),
+      show: (slug: string) => articles.show(transport, slug),
+    },
+
     cities: {
       index: () => cities.index(transport),
     },
@@ -126,6 +134,20 @@ function buildClient(transport: Transport, config: ClientConfig) {
       leadAnswers: (userToken?: string) => leadQuestions.answers(transport, userToken),
       submitLeadAnswers: (answers: Record<string, LeadAnswerValue>, userToken?: string) =>
         leadQuestions.submitAnswers(transport, answers, userToken),
+      /** Inquiries received for the signed-in owner's entries. */
+      inquiries: (query?: PageQuery, userToken?: string) =>
+        conversations.inquiries(transport, query, userToken),
+      /** Answer an inquiry, opening (or reusing) its conversation. */
+      startConversation: (inquiryId: number, body: string, userToken?: string) =>
+        conversations.startFromInquiry(transport, inquiryId, body, userToken),
+      conversations: (query?: PageQuery, userToken?: string) =>
+        conversations.index(transport, query, userToken),
+      conversation: (id: number, userToken?: string) => conversations.show(transport, id, userToken),
+      /** The thread, oldest first. Reading it marks it read for this user. */
+      conversationMessages: (id: number, query?: PageQuery, userToken?: string) =>
+        conversations.messages(transport, id, query, userToken),
+      sendConversationMessage: (id: number, body: string, userToken?: string) =>
+        conversations.sendMessage(transport, id, body, userToken),
     },
 
     claims: {

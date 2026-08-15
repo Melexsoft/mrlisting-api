@@ -306,6 +306,75 @@ export interface ListingType {
   position: number
 }
 
+export type ArticleScope = "blog" | "glossar" | "documentation" | "news"
+
+export interface TagRef {
+  slug: string
+  name: string
+}
+
+/** An article in a list — everything but the content. */
+export interface ArticleCard {
+  slug: string
+  title: string
+  excerpt: string | null
+  scope: ArticleScope
+  tags: TagRef[]
+  created_at: string
+  updated_at: string
+}
+
+/** One article in full. `content` is raw markdown; render and sanitise it yourself. */
+export interface Article extends ArticleCard {
+  content: string
+  images: Array<{ filename: string; url: string | null; thumb_url: string | null }>
+}
+
+export interface ArticleQuery extends PageQuery {
+  scope?: ArticleScope
+  /** A tag's slug, as returned in `tags`. */
+  tag?: string
+  q?: string
+}
+
+/** A form submission aimed at one of the signed-in owner's entries. */
+export interface Inquiry {
+  id: number
+  form_name: string
+  listing: { slug: string; name: string }
+  sender_name: string
+  answers: Array<{ label: string; value: unknown }>
+  created_at: string
+  /** Set once a conversation grew out of this inquiry. */
+  conversation_id: number | null
+  /** False when the sender was not signed in — answer that one by email. */
+  can_start_conversation: boolean
+}
+
+/** A thread between an entry's owner and the person who enquired. */
+export interface Conversation {
+  id: number
+  /** The signed-in user's side of this thread. */
+  role: "owner" | "inquirer"
+  counterpart: { name: string }
+  listing: { slug: string; name: string }
+  inquiry: { id: number; form_name: string; created_at: string }
+  last_message_at: string | null
+  messages_count: number
+  /** Messages the other side wrote since the signed-in user last read the thread. */
+  unread_count: number
+  created_at: string
+}
+
+export interface ConversationMessage {
+  id: number
+  body: string
+  sender: { name: string }
+  /** True when the signed-in user wrote it. */
+  mine: boolean
+  created_at: string
+}
+
 export type LeadQuestionFieldType = "single_choice" | "multiple_choice" | "free_text" | "boolean"
 
 export interface LeadQuestion {

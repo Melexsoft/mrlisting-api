@@ -301,3 +301,101 @@ describe("lead questions", () => {
     expect(error.errors[0]).toContain("planning")
   })
 })
+
+describe("conversations", () => {
+  it("lists the inquiries an owner received", async () => {
+    const { api, calls } = client(
+      [ { body: { collection: [ {
+        id: 7, form_name: "Booking", listing: { slug: "elmau", name: "Schloss Elmau" },
+        sender_name: "Alex", answers: [], created_at: "2026-08-14T09:00:00Z",
+        conversation_id: null, can_start_conversation: true,
+      } ], pagination: { current: 1, pages: 1, count: 1 } } } ],
+      "user-jwt",
+    )
+
+    const { items } = await api.me.inquiries()
+
+    expect(calls[0]?.url).toContain("me/inquiries")
+    expect(items[0]?.can_start_conversation).toBe(true)
+  })
+
+  it("answers an inquiry, opening its conversation", async () => {
+    const { api, calls } = client(
+      [ { status: 201, body: { resource: { id: 3, role: "owner", counterpart: { name: "Alex" },
+        listing: { slug: "elmau", name: "Schloss Elmau" }, unread_count: 0, messages_count: 1 } } } ],
+      "user-jwt",
+    )
+
+    const conversation = await api.me.startConversation(7, "Yes, we have availability.")
+
+    expect(calls[0]?.url).toContain("me/inquiries/7/conversation")
+    expect(JSON.parse(String(calls[0]?.init.body))).toEqual({
+      message: { body: "Yes, we have availability." },
+    })
+    expect(conversation.role).toBe("owner")
+  })
+
+  it("reads the thread and writes a reply", async () => {
+    const { api, calls } = client(
+      [
+        { body: { collection: [ { id: 1, body: "Hello", mine: false, sender: { name: "Owner" } } ],
+          pagination: { current: 1, pages: 1, count: 1 } } },
+        { status: 201, body: { resource: { id: 2, body: "Hi back", mine: true } } },
+      ],
+      "user-jwt",
+    )
+
+    const { items } = await api.me.conversationMessages(3)
+    const reply = await api.me.sendConversationMessage(3, "Hi back")
+
+    expect(calls[0]?.url).toContain("me/conversations/3/messages")
+    expect(items[0]?.mine).toBe(false)
+    expect(reply.mine).toBe(true)
+  })
+
+  it("surfaces a 404 for a conversation the user is no side of", async () => {
+    const { api } = client([ { status: 404, body: { errors: [ "Not found." ] } } ], "user-jwt")
+
+    const error = await failure(api.me.conversation(99))
+
+    expect(error.status).toBe(404)
+  })
+})
+
+describe("articles", () => {
+  it("lists published articles with scope and tag filters in the query", async () => {
+    const { api, calls } = client([
+      { body: { collection: [ { slug: "venue-guide", title: "Venue guide", scope: "blog",
+        tags: [ { slug: "venues", name: "Venues" } ] } ],
+        pagination: { current: 1, pages: 1, count: 1 } } },
+    ])
+
+    const { items } = await api.articles.index({ scope: "blog", tag: "venues", q: "guide" })
+
+    expect(calls[0]?.url).toContain("/articles?")
+    expect(calls[0]?.url).toContain("scope=blog")
+    expect(calls[0]?.url).toContain("tag=venues")
+    expect(items[0]?.tags[0]?.slug).toBe("venues")
+  })
+
+  it("reads one article with its markdown and images", async () => {
+    const { api, calls } = client([
+      { body: { resource: { slug: "venue-guide", title: "Venue guide", scope: "blog",
+        content: "# Hello", tags: [], images: [ { filename: "hall.png", url: "https://x/wide", thumb_url: "https://x/thumb" } ] } } },
+    ])
+
+    const article = await api.articles.show("venue-guide")
+
+    expect(calls[0]?.url).toContain("/articles/venue-guide")
+    expect(article.content).toBe("# Hello")
+    expect(article.images[0]?.url).toContain("wide")
+  })
+
+  it("surfaces a 404 for a draft", async () => {
+    const { api } = client([ { status: 404, body: { errors: [ "Not found." ] } } ])
+
+    const error = await failure(api.articles.show("unfinished"))
+
+    expect(error.status).toBe(404)
+  })
+})

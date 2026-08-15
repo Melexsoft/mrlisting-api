@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+Articles: the directory's editorial content.
+
+- `articles.index({ scope, tag, q, page, per_page })`: published articles as cards (no content), filterable by scope (`blog` / `glossar` / `documentation` / `news`), tag slug and free text
+- `articles.show(slug)`: one article in full — raw markdown `content` (render and sanitise it yourself), tags, and its image collection with `url`/`thumb_url`
+- New types: `Article`, `ArticleCard`, `ArticleScope`, `ArticleQuery`, `TagRef`
+
+Conversations: in-app messaging between an entry's owner and the person who enquired.
+
+- `me.inquiries()`: the inquiries an owner received for their entries, with `can_start_conversation` telling which can be answered in-app (the sender was signed in) and which only by email
+- `me.startConversation(inquiryId, body)`: answer an inquiry — opens the conversation growing out of it, or reuses the existing one, and posts the message in one step
+- `me.conversations()` / `me.conversation(id)`: the signed-in user's threads with role, counterpart, listing, originating inquiry and `unread_count`
+- `me.conversationMessages(id)`: the thread oldest-first; reading it moves the user's read marker
+- `me.sendConversationMessage(id, body)`: write a reply; the counterpart is notified by email, the sender never is
+- New types: `Inquiry`, `Conversation`, `ConversationMessage`
+
 ## 0.2.0
 
 Everything the API already served that the client could not reach.
