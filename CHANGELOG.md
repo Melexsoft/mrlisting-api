@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+MCP server: `mrlisting-mcp`, a zero-dependency stdio bin bridging Claude Code
+(or any MCP client) to one directory through the agent API (`/api/agent/v1`).
+
+- Configure with `MRLISTING_URL` + `MRLISTING_AGENT_KEY` (issued under Settings → Agent access)
+- Tools are advertised according to the key's permissions — a read-only key yields a read-only toolbox
+- Tools: whoami, get_reference_data, search/get/create/update/publish/delete_listing, list/create/update_category, list/get/create/update_article, list/get_form, list/get_submission, set_submission_status, list_users
+- Run via `npx -y --package=@mrlisting/api mrlisting-mcp`
+
 Articles: the directory's editorial content.
 
 - `articles.index({ scope, tag, q, page, per_page })`: published articles as cards (no content), filterable by scope (`blog` / `glossar` / `documentation` / `news`), tag slug and free text

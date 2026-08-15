@@ -1,7 +1,8 @@
 import { defineConfig } from "tsup"
 
 export default defineConfig({
-  entry: ["src/index.ts"],
+  // index = the SDK; mcp = the stdio MCP server bin (ESM-only, node runs it).
+  entry: ["src/index.ts", "src/mcp.ts"],
   format: ["esm", "cjs"],
   dts: true,
   clean: true,
