@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.4.0
+
+Guest conversations: the account-less side of a thread.
+
+- `guest.conversation(token)` / `guest.reply(token, body)`: a visitor who enquired without signing up reads and answers through the secret link they were mailed; no user token involved
+- `me.inquiries()` now includes **regional inquiries** that notified one of the owner's entries (with `kind` and the owner's own `listing` attached), and `can_start_conversation` is true for anonymous senders too — answering one opens a guest thread
+- New types: `GuestConversation`, `GuestMessage`; `Inquiry` gained `kind` and a nullable per-owner `listing`
+
+Lead questions: submissions became first-class events.
+
+- `me.submitLeadAnswers(...)` now returns `submission_id` and the active `questions` alongside `saved`, and the same endpoint answers at `POST /lead_questions/submissions`
+- Each submission is recorded server-side and can trigger the directory's lead automations (mail the person or the team, immediately or after a configured delay)
+
+MCP: the toolbox grew from managing content to configuring the directory.
+
+- `get_capabilities`: the key's full capability map — granted and ungranted permissions, the endpoints each unlocks, configurable settings with their meaning. Read this first.
+- New tools behind the matching scopes: `create_form`, `update_form`, `list/get/create/update_schema`, `add/update/delete_schema_field`, `list_email_templates`, `update/reset_email_template`, `get/update_email_layout`, `list/create/update/delete_lead_question`, `get_settings`, `update_settings` (credentials are never readable or writable)
+
 ## 0.3.0
 
 MCP server: `mrlisting-mcp`, a zero-dependency stdio bin bridging Claude Code
@@ -23,14 +41,7 @@ Conversations: in-app messaging between an entry's owner and the person who enqu
 - `me.conversations()` / `me.conversation(id)`: the signed-in user's threads with role, counterpart, listing, originating inquiry and `unread_count`
 - `me.conversationMessages(id)`: the thread oldest-first; reading it moves the user's read marker
 - `me.sendConversationMessage(id, body)`: write a reply; the counterpart is notified by email, the sender never is
-- `guest.conversation(token)` / `guest.reply(token, body)`: the account-less side — a visitor who enquired without signing up reads and answers through the secret link they were mailed; no user token involved
-- `me.inquiries()` now includes **regional inquiries** that notified one of the owner's entries (with `kind` and the owner's own `listing` attached), and `can_start_conversation` is true for anonymous senders too — answering one opens a guest thread
-- New types: `Inquiry`, `Conversation`, `ConversationMessage`, `GuestConversation`, `GuestMessage`
-
-Lead questions: submissions became first-class events.
-
-- `me.submitLeadAnswers(...)` now returns `submission_id` and the active `questions` alongside `saved`, and the same endpoint answers at `POST /lead_questions/submissions`
-- Each submission is recorded server-side and can trigger the directory's lead automations (mail the person or the team, immediately or after a configured delay)
+- New types: `Inquiry`, `Conversation`, `ConversationMessage`
 
 ## 0.2.0
 
