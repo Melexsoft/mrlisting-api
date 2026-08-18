@@ -1,6 +1,6 @@
 {
   "name": "@mrlisting/api",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Connect a directory frontend to the MrListing API",
   "keywords": [
     "api",
@@ -28,11 +28,11 @@
   },
   "main": "./dist/index.cjs",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "mrlisting-mcp": "dist/mcp.js"
+  },
   "directories": {
     "test": "test"
-  },
-  "bin": {
-    "mrlisting-mcp": "./dist/mcp.js"
   },
   "files": [
     "dist",

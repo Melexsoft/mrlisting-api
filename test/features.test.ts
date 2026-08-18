@@ -399,3 +399,37 @@ describe("articles", () => {
     expect(error.status).toBe(404)
   })
 })
+
+describe("guest conversations", () => {
+  it("reads a guest thread through its link token", async () => {
+    const { api, calls } = client([
+      { body: { resource: { listing: { slug: "elmau", name: "Schloss Elmau" }, owner_name: "Owner",
+        guest_name: "Alex", messages: [ { id: 1, body: "Hello", mine: false, sender_name: "Owner" } ] } } },
+    ])
+
+    const thread = await api.guest.conversation("tok123")
+
+    expect(calls[0]?.url).toContain("guest/conversations/tok123")
+    expect(thread.messages[0]?.mine).toBe(false)
+  })
+
+  it("replies as the guest without a user token", async () => {
+    const { api, calls } = client([
+      { status: 201, body: { resource: { id: 2, body: "Thanks!", mine: true, sender_name: null } } },
+    ])
+
+    const reply = await api.guest.reply("tok123", "Thanks!")
+
+    expect(calls[0]?.url).toContain("guest/conversations/tok123/messages")
+    expect(JSON.parse(String(calls[0]?.init.body))).toEqual({ message: { body: "Thanks!" } })
+    expect(reply.mine).toBe(true)
+  })
+
+  it("surfaces a 404 for a dead link", async () => {
+    const { api } = client([ { status: 404, body: { errors: [ "Not found." ] } } ])
+
+    const error = await failure(api.guest.conversation("expired"))
+
+    expect(error.status).toBe(404)
+  })
+})

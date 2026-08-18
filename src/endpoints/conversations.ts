@@ -4,6 +4,8 @@ import type {
   Conversation,
   ConversationMessage,
   Envelope,
+  GuestConversation,
+  GuestMessage,
   Inquiry,
   PageQuery,
   Transport,
@@ -91,4 +93,28 @@ export async function sendMessage(
   )
 }
 
-export default { inquiries, startFromInquiry, index, show, messages, sendMessage }
+/**
+ * A guest's conversation, read through the secret link they were mailed.
+ * No user token involved — the link token is the credential. Reading it marks
+ * the thread read for the guest.
+ */
+export async function showGuest(transport: Transport, token: string): Promise<GuestConversation> {
+  return resource(
+    await transport.get<Envelope<GuestConversation>>(`guest/conversations/${encodeURIComponent(token)}`),
+  )
+}
+
+/** The guest's reply — no account needed. The owner is notified by email. */
+export async function replyAsGuest(
+  transport: Transport,
+  token: string,
+  body: string,
+): Promise<GuestMessage> {
+  return resource(
+    await transport.post<Envelope<GuestMessage>>(`guest/conversations/${encodeURIComponent(token)}/messages`, {
+      body: { message: { body } },
+    }),
+  )
+}
+
+export default { inquiries, startFromInquiry, index, show, messages, sendMessage, showGuest, replyAsGuest }

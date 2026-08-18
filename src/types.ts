@@ -337,18 +337,41 @@ export interface ArticleQuery extends PageQuery {
   q?: string
 }
 
-/** A form submission aimed at one of the signed-in owner's entries. */
+/**
+ * A form submission that reached one of the signed-in owner's entries —
+ * directly, or regionally (the owner's entry was among the notified).
+ */
 export interface Inquiry {
   id: number
+  kind: "general" | "direct_inquiry" | "regional_inquiry"
   form_name: string
-  listing: { slug: string; name: string }
+  /** The owner's entry this inquiry means; null when it could not be resolved. */
+  listing: { slug: string; name: string } | null
   sender_name: string
   answers: Array<{ label: string; value: unknown }>
   created_at: string
-  /** Set once a conversation grew out of this inquiry. */
+  /** Set once this owner's conversation grew out of the inquiry. */
   conversation_id: number | null
-  /** False when the sender was not signed in — answer that one by email. */
+  /** False only when the inquiry carries no address at all. Anonymous senders become guests. */
   can_start_conversation: boolean
+}
+
+/** A guest's view of a conversation, read through their secret link. */
+export interface GuestConversation {
+  listing: { slug: string; name: string }
+  owner_name: string
+  guest_name: string | null
+  created_at: string
+  messages: GuestMessage[]
+}
+
+export interface GuestMessage {
+  id: number
+  body: string
+  /** True when the guest wrote it. */
+  mine: boolean
+  sender_name: string | null
+  created_at: string
 }
 
 /** A thread between an entry's owner and the person who enquired. */
@@ -392,6 +415,10 @@ export type LeadAnswerValue = string | string[] | boolean | null
 
 export interface LeadAnswersReceipt {
   saved: string[]
+  /** The submission event this answer set was recorded as. */
+  submission_id: number
+  /** The active questions, so a frontend can re-render without a second request. */
+  questions: LeadQuestion[]
 }
 
 export type SubscriptionStatus =

@@ -155,6 +155,12 @@ function buildClient(transport: Transport, config: ClientConfig) {
       accept: (token: string, userToken?: string) => claims.accept(transport, token, userToken),
     },
 
+    /** The account-less side of a conversation: link token in, thread out. */
+    guest: {
+      conversation: (token: string) => conversations.showGuest(transport, token),
+      reply: (token: string, body: string) => conversations.replyAsGuest(transport, token, body),
+    },
+
     /** Only present in directories that sell something. */
     products: {
       index: (userToken?: string) => products.index(transport, userToken),
