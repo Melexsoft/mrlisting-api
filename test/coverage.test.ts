@@ -170,4 +170,35 @@ describe("products", () => {
     expect(error.isNotFound).toBe(true)
     expect(error.status).toBe(404)
   })
+
+  it("asks for the live Stripe price with resolve", async () => {
+    const { api, calls } = client([
+      { body: { collection: [ { id: 3, key: "premium_listing", name: "Featured",
+        stripe_price: { id: "price_x", currency: "eur", unit_amount: 9900, interval: "month" } } ] } },
+    ])
+
+    const products = await api.products.index({ resolve: true })
+
+    expect(calls[0]?.url).toContain("resolve=true")
+    expect(products[0]?.stripe_price?.unit_amount).toBe(9900)
+  })
+
+  it("fetches one product by its stable key", async () => {
+    const { api, calls } = client([
+      { body: { resource: { id: 3, key: "premium_listing", name: "Featured" } } },
+    ])
+
+    const product = await api.products.byKey("premium_listing")
+
+    expect(calls[0]?.url).toContain("/products/key/premium_listing")
+    expect(product.key).toBe("premium_listing")
+  })
+
+  it("flags the 404 an unknown key answers with", async () => {
+    const { api } = client([ { status: 404, body: { errors: [ "Not found." ] } } ])
+
+    const error = await failure(api.products.byKey("nope"))
+
+    expect(error.isNotFound).toBe(true)
+  })
 })

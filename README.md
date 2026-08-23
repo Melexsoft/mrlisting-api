@@ -85,7 +85,12 @@ const { items, pagination } = await api.listings.search({
   schema: "shareholders",                                          // required, must be published
   q: "anna",                                                       // optional free text
   filters: [{ field: "share_percent", operator: "gt", value: 25 }],
+  city: "berlin",                                                  // optional, by slug
+  category: "consulting",                                          // optional, by slug
 })
+
+Each schema field carries a `searchable` flag (see `api.schemas.index()`) —
+that is the set a search UI should offer as filters.
 ```
 
 Operators: `contains` (default), `eq`, `gt`, `lt` (numbers), `before`, `after` (dates), `present`. Every filter must hold, each judged on its own record. An unknown field or operator answers `422` instead of silently matching nothing.
@@ -176,6 +181,46 @@ await asUser.me.updateListing("schloss-elmau", { short_description: "An alpine h
 
 An owner may edit their own copy. Publishing, ranking and ownership belong to the directory's editors and are rejected here.
 
+## An owner's images and extra fields
+
+The signed-in owner manages their entry's images through the API — gallery
+photos, the cover (banner) and the logo. Uploads are multipart; pass a `File`
+or `Blob` (or a ready-made `FormData`) and the rules are the directory's own:
+PNG, JPEG or WEBP, and at most 20 photos.
+
+```ts
+const asOwner = api.withUser(token)
+
+await asOwner.me.addListingPhotos("schloss-elmau", [file1, file2]) // appends
+await asOwner.me.removeListingPhoto("schloss-elmau", photoId)
+await asOwner.me.setListingBanner("schloss-elmau", coverFile)      // replaces
+await asOwner.me.removeListingBanner("schloss-elmau")
+await asOwner.me.setListingLogo("schloss-elmau", logoFile)
+```
+
+Every call answers with the full owner payload, photos included — re-render the
+media section without a second request.
+
+Structured data works the same way. The read carries each published schema's
+FULL field definition next to the entry's current answers — including schemas
+nothing has been answered for yet, so an empty form can be rendered from one
+request:
+
+```ts
+const groups = await asOwner.me.listingRecords("schloss-elmau")
+// → [{ schema: { key, name, cardinality, fields: [...] }, records: [...] }]
+
+await asOwner.me.updateListingRecord("schloss-elmau", "extra_fields", {
+  outdoor: true,            // boolean
+  budget: "mittel",         // select: one of field.options
+  guest_count: 120,         // number
+})
+```
+
+The write is an upsert for `one_to_one` schemas ("one form per listing");
+values are keyed by field key, unknown keys are dropped server-side, and
+schemas of any other cardinality answer `422`.
+
 ## Claiming an entry
 
 Two routes, both ending in the same place:
@@ -197,6 +242,13 @@ Only present in directories that sell something; others answer `404`.
 
 ```ts
 const products = await api.withUser(token).products.index()
+
+// A product your code refers to by name rather than by a numeric id:
+const premium = await api.products.byKey("premium_listing")
+
+// resolve: true adds the live Stripe price (or null when Stripe is unreachable):
+const withPrice = await api.products.byKey("premium_listing", { resolve: true })
+withPrice.stripe_price?.unit_amount // e.g. 9900
 
 const { checkout_url } = await api.withUser(token).products.checkout(product.id, {
   successUrl: "https://example.com/thanks",

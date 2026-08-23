@@ -1,13 +1,6 @@
 import { ApiError } from "./errors.js"
 import type { Envelope, RequestOptions, Transport } from "./types.js"
 
-/**
- * The single place an HTTP request is made.
- *
- * Every endpoint goes through here, so retries, error shapes and header handling
- * are decided once rather than per resource. Built on `fetch`, so the package has
- * no runtime dependencies at all.
- */
 export function createTransport(config: {
   baseUrl: string
   apiToken: string
@@ -33,28 +26,27 @@ export function createTransport(config: {
 
     const headers: Record<string, string> = {
       Accept: "application/json",
-      // The directory's own credential. It identifies the tenant, so it decides
-      // which data the request can see at all.
+
       "X-Api-Key": config.apiToken,
       ...options.headers,
     }
 
-    // A signed-in frontend user, when there is one. Deliberately a different header
-    // from the account token: they authenticate different things.
     const userToken = options.userToken ?? config.userToken
     if (userToken) headers["X-User-Token"] = userToken
 
-    if (options.body !== undefined) headers["Content-Type"] = "application/json"
+    const multipart = typeof FormData !== "undefined" && options.body instanceof FormData
+    if (options.body !== undefined && !multipart) headers["Content-Type"] = "application/json"
 
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), timeout)
 
     let response: Response
     try {
-      // Built conditionally: under exactOptionalPropertyTypes, handing `undefined`
-      // to RequestInit.body is not the same as omitting it.
+
       const init: RequestInit = { method, headers, signal: options.signal ?? controller.signal }
-      if (options.body !== undefined) init.body = JSON.stringify(options.body)
+      if (options.body !== undefined) {
+        init.body = multipart ? (options.body as FormData) : JSON.stringify(options.body)
+      }
 
       response = await doFetch(url, init)
     } catch (cause) {
@@ -85,7 +77,6 @@ export function createTransport(config: {
   }
 }
 
-/** Unwraps `{ resource: ... }` so callers work with the thing, not the envelope. */
 export function resource<T>(payload: Envelope<T>): T {
   return payload.resource as T
 }
@@ -112,8 +103,7 @@ async function readJson(response: Response): Promise<unknown> {
   try {
     return JSON.parse(text)
   } catch {
-    // A proxy or gateway answering with HTML is a real failure mode; keep the body
-    // so the thrown error says what actually came back.
+
     return { errors: [text.slice(0, 500)] }
   }
 }

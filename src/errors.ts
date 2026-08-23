@@ -1,10 +1,3 @@
-/**
- * Every failure from the API arrives as one of these.
- *
- * The API always answers with `{ errors: [...] }`, so the messages are lifted out
- * and the status is kept alongside them — a caller should never have to dig through
- * a response object to find out what went wrong.
- */
 export class ApiError extends Error {
   readonly status: number
   readonly errors: string[]
@@ -41,7 +34,6 @@ export class ApiError extends Error {
     })
   }
 
-  /** A request that never reached the API: DNS, TLS, timeout, offline. */
   static fromNetwork(cause: unknown, method: string, url: string): ApiError {
     const aborted = cause instanceof Error && cause.name === "AbortError"
 
@@ -54,12 +46,10 @@ export class ApiError extends Error {
     })
   }
 
-  /** The credential was missing, wrong, or has been rotated. */
   get isUnauthorized(): boolean {
     return this.status === 401
   }
 
-  /** Signed in, but not allowed: a suspended directory, or the wrong audience. */
   get isForbidden(): boolean {
     return this.status === 403
   }

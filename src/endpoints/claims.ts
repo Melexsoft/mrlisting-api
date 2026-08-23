@@ -3,7 +3,6 @@ import type { Envelope, Listing, OwnedListing, Transport } from "../types.js"
 
 const path = "claims"
 
-/** Resolves a tokenised claim link: which entry it is for, and whether it is still free. */
 export async function show(
   transport: Transport,
   token: string,
@@ -15,7 +14,6 @@ export async function show(
   )
 }
 
-/** Accepts the invitation. The signed-in user becomes the entry's owner. */
 export async function accept(
   transport: Transport,
   token: string,
@@ -25,5 +23,3 @@ export async function accept(
     await transport.post<Envelope<OwnedListing>>(`${path}/${encodeURIComponent(token)}`, { userToken }),
   )
 }
-
-export default { show, accept }

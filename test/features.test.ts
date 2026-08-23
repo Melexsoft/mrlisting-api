@@ -433,3 +433,107 @@ describe("guest conversations", () => {
     expect(error.status).toBe(404)
   })
 })
+
+describe("owner media", () => {
+  const owned = { slug: "cafe-adler", name: "Café Adler", photos: [{ id: 7, thumb_url: "t" }] }
+
+  it("uploads photos as multipart and leaves the boundary to fetch", async () => {
+    const { api, calls } = client([{ body: { resource: owned } }], "jwt")
+
+    const listing = await api.me.addListingPhotos("cafe-adler", [new Blob(["x"], { type: "image/png" })])
+
+    expect(listing.photos[0]?.id).toBe(7)
+    const call = calls[0]!
+    expect(call.url).toContain("/me/listings/cafe-adler/photos")
+    expect(call.init.method).toBe("POST")
+    expect(call.init.body).toBeInstanceOf(FormData)
+
+    expect((call.init.headers as Record<string, string>)["Content-Type"]).toBeUndefined()
+    expect((call.init.headers as Record<string, string>)["X-User-Token"]).toBe("jwt")
+  })
+
+  it("removes one photo by id", async () => {
+    const { api, calls } = client([{ body: { resource: { ...owned, photos: [] } } }], "jwt")
+
+    const listing = await api.me.removeListingPhoto("cafe-adler", 7)
+
+    expect(listing.photos).toEqual([])
+    expect(calls[0]!.url).toContain("/me/listings/cafe-adler/photos/7")
+    expect(calls[0]!.init.method).toBe("DELETE")
+  })
+
+  it("sets and removes the cover image", async () => {
+    const { api, calls } = client([
+      { body: { resource: { ...owned, banner_url: "b" } } },
+      { body: { resource: { ...owned, banner_url: null } } },
+    ], "jwt")
+
+    await api.me.setListingBanner("cafe-adler", new Blob(["x"], { type: "image/png" }))
+    await api.me.removeListingBanner("cafe-adler")
+
+    expect(calls[0]!.init.method).toBe("PUT")
+    expect(calls[0]!.url).toContain("/me/listings/cafe-adler/banner")
+    expect(calls[0]!.init.body).toBeInstanceOf(FormData)
+    expect(calls[1]!.init.method).toBe("DELETE")
+  })
+
+  it("sets the logo", async () => {
+    const { api, calls } = client([{ body: { resource: owned } }], "jwt")
+
+    await api.me.setListingLogo("cafe-adler", new Blob(["x"], { type: "image/svg+xml" }))
+
+    expect(calls[0]!.url).toContain("/me/listings/cafe-adler/logo")
+  })
+})
+
+describe("owner records", () => {
+  it("reads every published schema with fields and current answers", async () => {
+    const group = {
+      schema: { key: "extra_fields", name: "Extra", cardinality: "one_to_one", fields: [{ key: "outdoor" }] },
+      records: [{ id: 1, title: "Extra", values: { outdoor: true } }],
+    }
+    const { api, calls } = client([{ body: { collection: [group] } }], "jwt")
+
+    const groups = await api.me.listingRecords("cafe-adler")
+
+    expect(groups[0]?.schema.key).toBe("extra_fields")
+    expect(groups[0]?.records[0]?.values["outdoor"]).toBe(true)
+    expect(calls[0]!.url).toContain("/me/listings/cafe-adler/records")
+  })
+
+  it("upserts the one-per-listing record keyed by field key", async () => {
+    const { api, calls } = client(
+      [{ body: { resource: { id: 1, title: "Extra", values: { budget: "mid", guest_count: 120 } } } }],
+      "jwt",
+    )
+
+    const record = await api.me.updateListingRecord("cafe-adler", "extra_fields", {
+      budget: "mid",
+      guest_count: 120,
+    })
+
+    expect(record.values["guest_count"]).toBe(120)
+    const call = calls[0]!
+    expect(call.init.method).toBe("PUT")
+    expect(call.url).toContain("/me/listings/cafe-adler/records/extra_fields")
+    expect(JSON.parse(String(call.init.body))).toEqual({ values: { budget: "mid", guest_count: 120 } })
+  })
+})
+
+describe("structured search filters", () => {
+  it("sends city and category alongside schema filters", async () => {
+    const { api, calls } = client([{ body: { collection: [], pagination: null } }])
+
+    await api.listings.search({
+      schema: "extra_fields",
+      city: "berlin",
+      category: "schloss",
+      filters: [{ field: "guest_count", operator: "gt", value: 100 }],
+    })
+
+    const body = JSON.parse(String(calls[0]!.init.body))
+    expect(body.city).toBe("berlin")
+    expect(body.category).toBe("schloss")
+    expect(body.filters[0]).toEqual({ field: "guest_count", operator: "gt", value: 100 })
+  })
+})

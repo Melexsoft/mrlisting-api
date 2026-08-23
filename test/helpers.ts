@@ -2,7 +2,6 @@ import { vi } from "vitest"
 
 import { ApiError, mrlisting } from "../src/index.js"
 
-/** Runs a request that is expected to fail and hands back the ApiError. */
 export async function failure(promise: Promise<unknown>): Promise<ApiError> {
   try {
     await promise
@@ -13,7 +12,6 @@ export async function failure(promise: Promise<unknown>): Promise<ApiError> {
   throw new Error("expected the request to fail, but it succeeded")
 }
 
-/** A fetch stand-in that records what it was asked for and replies with fixed data. */
 export function stubFetch(responses: Array<{ status?: number; body?: unknown }>) {
   const calls: Array<{ url: string; init: RequestInit }> = []
   let index = 0
@@ -23,7 +21,7 @@ export function stubFetch(responses: Array<{ status?: number; body?: unknown }>)
     const reply = responses[Math.min(index++, responses.length - 1)] ?? {}
 
     const status = reply.status ?? 200
-    // A 204 Response must be constructed with a null body, not an empty string.
+
     const body = status === 204 || reply.body === undefined ? null : JSON.stringify(reply.body)
 
     return new Response(body, { status, headers: { "Content-Type": "application/json" } })

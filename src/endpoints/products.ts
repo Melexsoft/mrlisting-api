@@ -3,24 +3,38 @@ import type { CheckoutSession, CollectionEnvelope, Envelope, Product, Transport 
 
 const path = "products"
 
-/**
- * What the signed-in user may buy.
- *
- * The audience rule is applied server-side: a product meant for entry owners is
- * never listed to a plain visitor. Without a user token the list is empty, and a
- * directory that sells nothing answers 404.
- */
-export async function index(transport: Transport, userToken?: string): Promise<Product[]> {
-  const payload = await transport.get<CollectionEnvelope<Product>>(path, { userToken })
+export interface ProductReadOptions {
+  userToken?: string
+
+  resolve?: boolean
+}
+
+export async function index(
+  transport: Transport,
+  options: string | ProductReadOptions = {},
+): Promise<Product[]> {
+  const opts = typeof options === "string" ? { userToken: options } : options
+  const payload = await transport.get<CollectionEnvelope<Product>>(path, {
+    userToken: opts.userToken,
+    query: opts.resolve ? { resolve: true } : undefined,
+  })
 
   return payload.collection
 }
 
-/**
- * Starts a Stripe Checkout session in the directory's own Stripe account and returns
- * the URL to send the buyer to. Payment is only confirmed by Stripe's webhook, never
- * by the buyer's return trip.
- */
+export async function byKey(
+  transport: Transport,
+  key: string,
+  options: ProductReadOptions = {},
+): Promise<Product> {
+  return resource(
+    await transport.get<Envelope<Product>>(`${path}/key/${encodeURIComponent(key)}`, {
+      userToken: options.userToken,
+      query: options.resolve ? { resolve: true } : undefined,
+    }),
+  )
+}
+
 export async function checkout(
   transport: Transport,
   productId: number,
@@ -37,5 +51,3 @@ export async function checkout(
     }),
   )
 }
-
-export default { index, checkout }

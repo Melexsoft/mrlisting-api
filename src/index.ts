@@ -23,19 +23,6 @@ import type {
 export { ApiError } from "./errors.js"
 export type * from "./types.js"
 
-/**
- * A MrListing API client.
- *
- * ```ts
- * const api = mrlisting({ baseUrl: process.env.MRLISTING_URL!, apiToken: process.env.MRLISTING_TOKEN! })
- *
- * const { items } = await api.listings.index({ q: "elmau" })
- * const entry     = await api.listings.show("schloss-elmau")
- * ```
- *
- * Namespaces mirror the API's own resources, and the verbs are the ones the API
- * uses: `index`, `show`, `create`, `update`.
- */
 export function mrlisting(config: ClientConfig) {
   if (!config.apiToken) throw new Error("mrlisting() needs an apiToken.")
   if (!config.baseUrl) throw new Error("mrlisting() needs a baseUrl.")
@@ -47,7 +34,7 @@ export function mrlisting(config: ClientConfig) {
 
 function buildClient(transport: Transport, config: ClientConfig) {
   return {
-    /** Identity, active forms and counts for this directory. */
+
     site: {
       show: () => site.show(transport),
       sitemap: () => site.sitemap(transport),
@@ -62,12 +49,10 @@ function buildClient(transport: Transport, config: ClientConfig) {
       search: (input: Parameters<typeof listings.search>[1]) => listings.search(transport, input),
     },
 
-    /** Structured-data schemas the directory chose to expose. */
     schemas: {
       index: () => schemas.index(transport),
     },
 
-    /** Reading and leaving reviews through an invitation link. */
     reviews: {
       showRequest: (token: string) => reviews.showRequest(transport, token),
       submitFromRequest: (token: string, input: Parameters<typeof reviews.submitFromRequest>[2]) =>
@@ -78,7 +63,6 @@ function buildClient(transport: Transport, config: ClientConfig) {
       index: () => listingTypes.index(transport),
     },
 
-    /** The questions this directory asks right after signup. */
     leadQuestions: {
       index: () => leadQuestions.index(transport),
     },
@@ -87,7 +71,6 @@ function buildClient(transport: Transport, config: ClientConfig) {
       index: () => categories.index(transport),
     },
 
-    /** Published editorial content: blog, glossar, documentation, news. */
     articles: {
       index: (query?: ArticleQuery) => articles.index(transport, query),
       show: (slug: string) => articles.show(transport, slug),
@@ -103,7 +86,6 @@ function buildClient(transport: Transport, config: ClientConfig) {
         forms.submit(transport, key, input),
     },
 
-    /** Sign-in for this directory's own frontend users. */
     auth: {
       login: (input: Parameters<typeof auth.login>[1]) => auth.login(transport, input),
       signup: (input: Parameters<typeof auth.signup>[1]) => auth.signup(transport, input),
@@ -113,7 +95,6 @@ function buildClient(transport: Transport, config: ClientConfig) {
         auth.resetPassword(transport, input),
     },
 
-    /** The signed-in user's own profile, entries, purchases and answers. */
     me: {
       show: (userToken?: string) => me.show(transport, userToken),
       update: (input: Parameters<typeof me.update>[1], userToken?: string) =>
@@ -123,6 +104,30 @@ function buildClient(transport: Transport, config: ClientConfig) {
         me.updateListing(transport, slug, input, userToken),
       requestReview: (slug: string, input: Parameters<typeof me.requestReview>[2], userToken?: string) =>
         me.requestReview(transport, slug, input, userToken),
+
+      addListingPhotos: (slug: string, photos: Parameters<typeof me.addListingPhotos>[2], userToken?: string) =>
+        me.addListingPhotos(transport, slug, photos, userToken),
+      removeListingPhoto: (slug: string, photoId: number, userToken?: string) =>
+        me.removeListingPhoto(transport, slug, photoId, userToken),
+
+      setListingBanner: (slug: string, upload: Parameters<typeof me.setListingBanner>[2], userToken?: string) =>
+        me.setListingBanner(transport, slug, upload, userToken),
+      removeListingBanner: (slug: string, userToken?: string) =>
+        me.removeListingBanner(transport, slug, userToken),
+      setListingLogo: (slug: string, upload: Parameters<typeof me.setListingLogo>[2], userToken?: string) =>
+        me.setListingLogo(transport, slug, upload, userToken),
+      removeListingLogo: (slug: string, userToken?: string) =>
+        me.removeListingLogo(transport, slug, userToken),
+
+      listingRecords: (slug: string, userToken?: string) =>
+        me.listingRecords(transport, slug, userToken),
+
+      updateListingRecord: (
+        slug: string,
+        schemaKey: string,
+        values: Parameters<typeof me.updateListingRecord>[3],
+        userToken?: string,
+      ) => me.updateListingRecord(transport, slug, schemaKey, values, userToken),
       purchases: (query?: PageQuery, userToken?: string) =>
         purchases.index(transport, query, userToken),
       purchase: (id: number, userToken?: string) => purchases.show(transport, id, userToken),
@@ -134,16 +139,16 @@ function buildClient(transport: Transport, config: ClientConfig) {
       leadAnswers: (userToken?: string) => leadQuestions.answers(transport, userToken),
       submitLeadAnswers: (answers: Record<string, LeadAnswerValue>, userToken?: string) =>
         leadQuestions.submitAnswers(transport, answers, userToken),
-      /** Inquiries received for the signed-in owner's entries. */
+
       inquiries: (query?: PageQuery, userToken?: string) =>
         conversations.inquiries(transport, query, userToken),
-      /** Answer an inquiry, opening (or reusing) its conversation. */
+
       startConversation: (inquiryId: number, body: string, userToken?: string) =>
         conversations.startFromInquiry(transport, inquiryId, body, userToken),
       conversations: (query?: PageQuery, userToken?: string) =>
         conversations.index(transport, query, userToken),
       conversation: (id: number, userToken?: string) => conversations.show(transport, id, userToken),
-      /** The thread, oldest first. Reading it marks it read for this user. */
+
       conversationMessages: (id: number, query?: PageQuery, userToken?: string) =>
         conversations.messages(transport, id, query, userToken),
       sendConversationMessage: (id: number, body: string, userToken?: string) =>
@@ -155,28 +160,19 @@ function buildClient(transport: Transport, config: ClientConfig) {
       accept: (token: string, userToken?: string) => claims.accept(transport, token, userToken),
     },
 
-    /** The account-less side of a conversation: link token in, thread out. */
     guest: {
       conversation: (token: string) => conversations.showGuest(transport, token),
       reply: (token: string, body: string) => conversations.replyAsGuest(transport, token, body),
     },
 
-    /** Only present in directories that sell something. */
     products: {
-      index: (userToken?: string) => products.index(transport, userToken),
+      index: (options?: string | products.ProductReadOptions) => products.index(transport, options),
+      byKey: (key: string, options?: products.ProductReadOptions) =>
+        products.byKey(transport, key, options),
       checkout: (productId: number, options?: Parameters<typeof products.checkout>[2]) =>
         products.checkout(transport, productId, options),
     },
 
-    /**
-     * A client bound to one signed-in user, so their token does not have to be
-     * threaded through every call.
-     *
-     * ```ts
-     * const asUser = api.withUser(token)
-     * await asUser.me.listings()
-     * ```
-     */
     withUser(userToken: string) {
       return mrlisting({ ...config, userToken })
     },

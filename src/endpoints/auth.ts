@@ -1,13 +1,6 @@
 import { resource } from "../http.js"
 import type { DirectoryUser, Envelope, Session, Transport } from "../types.js"
 
-/**
- * Sign-in for a directory's own frontend users.
- *
- * The returned token identifies one person. Keep it out of localStorage: put it in
- * an httpOnly cookie from your backend, the same way you keep the account token off
- * the client entirely.
- */
 export async function login(
   transport: Transport,
   input: { email: string; password: string },
@@ -19,7 +12,6 @@ export async function login(
   return { user: payload.resource, token: payload.token }
 }
 
-/** Register a visitor. New accounts are always plain users, never listing owners. */
 export async function signup(
   transport: Transport,
   input: { email: string; password: string; password_confirmation?: string; name?: string },
@@ -31,12 +23,10 @@ export async function signup(
   return { user: payload.resource, token: payload.token }
 }
 
-/** Signs out everywhere: every token this user holds stops working, not just one. */
 export async function logout(transport: Transport, userToken?: string): Promise<void> {
   await transport.delete<void>("auth/logout", { userToken })
 }
 
-/** Always succeeds, whether or not the address is registered. */
 export async function requestPasswordReset(
   transport: Transport,
   email: string,
@@ -56,5 +46,3 @@ export async function resetPassword(
     }),
   )
 }
-
-export default { login, signup, logout, requestPasswordReset, resetPassword }

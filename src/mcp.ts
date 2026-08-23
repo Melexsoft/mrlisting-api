@@ -1,18 +1,4 @@
 #!/usr/bin/env node
-/**
- * mrlisting-mcp — a stdio MCP server bridging Claude Code (or any MCP client)
- * to one MrListing directory through the agent API.
- *
- * Zero dependencies by design, like the SDK itself: MCP over stdio is
- * newline-delimited JSON-RPC 2.0, which needs no framework.
- *
- * Environment:
- *   MRLISTING_URL        e.g. https://admin.example.com/api/agent/v1
- *   MRLISTING_AGENT_KEY  an agent key issued under Settings → Agent access
- *
- * Tools are advertised according to the key's permissions: a read-only key
- * yields a read-only toolbox. Every tool maps 1:1 to an agent API endpoint.
- */
 
 const PROTOCOL_VERSION = "2024-11-05"
 
@@ -21,7 +7,7 @@ type Json = Record<string, unknown>
 interface ToolDefinition {
   name: string
   description: string
-  /** Scope the key must hold; null = any active key. */
+
   scope: string | null
   inputSchema: Json
   call: (api: Api, args: Json) => Promise<unknown>
@@ -97,9 +83,10 @@ export const TOOLS: ToolDefinition[] = [
     scope: "listings.read",
     inputSchema: {
       type: "object",
-      properties: { q: str("Free-text search"), status: str("published or draft"), page: { type: "number" } },
+      properties: { q: str("Free-text search"), status: str("published or draft"),
+        tag: str("Tag slug or name"), page: { type: "number" } },
     },
-    call: (api, args) => api.request("GET", `/listings${query(args, ["q", "status", "page"])}`),
+    call: (api, args) => api.request("GET", `/listings${query(args, ["q", "status", "tag", "page"])}`),
   },
   {
     name: "get_listing",
@@ -118,6 +105,7 @@ export const TOOLS: ToolDefinition[] = [
         name: str("Entry name"), short_description: str("One-liner"), description: str("Long text"),
         email: str("Contact email"), phone: str("Phone"), website: str("URL"),
         address: str("Street address"), postal_code: str("Postal code"), city_name: str("City, free text"),
+        tag_list: str("Comma-separated tags, created on demand"),
         published: bool("Publish immediately"),
       },
       required: ["name"],
@@ -134,6 +122,7 @@ export const TOOLS: ToolDefinition[] = [
         slug: str("The entry to change"), name: str("Entry name"), short_description: str("One-liner"),
         description: str("Long text"), email: str("Contact email"), phone: str("Phone"), website: str("URL"),
         address: str("Street address"), postal_code: str("Postal code"), city_name: str("City, free text"),
+        tag_list: str("Comma-separated tags; replaces the entry's tags"),
         published: bool("Published state"),
       },
       required: ["slug"],
@@ -273,6 +262,9 @@ export const TOOLS: ToolDefinition[] = [
         key: str("The form to change"), name: str("Form name"), active: bool("Accepting submissions"),
         kind: str("general | direct_inquiry | regional_inquiry"),
         success_message: str("Shown after submitting"), notify_emails: str("Comma-separated team addresses"),
+        conversation_product_key: str(
+          "Product key an entry owner must hold (subscription or paid one-off) before answering this form's inquiries; empty string lifts the gate",
+        ),
         fields: { type: "array", description: "Replacement field definitions", items: { type: "object" } },
       },
       required: ["key"],
@@ -549,7 +541,6 @@ interface RpcMessage {
   params?: Json
 }
 
-/** Handles one JSON-RPC message; returns the response, or null for notifications. */
 export async function handleMessage(
   message: RpcMessage,
   api: Api,
@@ -604,7 +595,6 @@ async function main() {
 
   const api = createApi(baseUrl, key)
 
-  // The key's scopes decide which tools exist for this session.
   let scopes: string[] = []
   try {
     const me = (await api.request("GET", "/me")) as { key?: { permissions?: string[] } }
@@ -629,7 +619,7 @@ async function main() {
       try {
         parsed = JSON.parse(line)
       } catch {
-        continue // not JSON-RPC; nothing sane to answer
+        continue
       }
 
       const response = await handleMessage(parsed, api, scopes)
@@ -638,6 +628,5 @@ async function main() {
   })
 }
 
-// Only run the loop when executed as a binary, so tests can import the parts.
 const executedDirectly = process.argv[1]?.endsWith("mcp.js") || process.argv[1]?.endsWith("mrlisting-mcp")
 if (executedDirectly) main()
