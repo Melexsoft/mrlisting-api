@@ -166,6 +166,7 @@ export interface Sitemap {
   categories: SitemapEntry[]
   cities: SitemapEntry[]
   category_city_pairs: SitemapEntry[]
+  articles: SitemapEntry[]
 }
 
 export type FormKind = "general" | "direct_inquiry" | "regional_inquiry"

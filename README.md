@@ -34,6 +34,8 @@ const entry = await api.listings.show("schloss-elmau")
 
 Namespaces mirror the API's resources, and the verbs are the API's own: `index`, `show`, `update`, `submit`.
 
+Every call's return value is documented with a realistic example payload in [EXAMPLES.md](./EXAMPLES.md) (shipped inside the package, `node_modules/@mrlisting/api/EXAMPLES.md`) — enough to build and test a frontend against fixtures before a backend exists.
+
 ## Content
 
 ```ts
