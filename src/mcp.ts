@@ -557,7 +557,7 @@ export async function handleMessage(
       return respond({
         protocolVersion: PROTOCOL_VERSION,
         capabilities: { tools: {} },
-        serverInfo: { name: "mrlisting-mcp", version: "0.4.0" },
+        serverInfo: { name: "mrlisting-mcp", version: "0.7.1" },
       })
     case "ping":
       return respond({})
