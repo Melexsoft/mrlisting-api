@@ -16,6 +16,39 @@ describe("content", () => {
     expect(sitemap.listings[0]?.indexable).toBe(true)
   })
 
+  it("carries both category images, banner and portrait card cover", async () => {
+    const { api } = client([
+      { body: { collection: [ {
+        slug: "wellness", name: "Wellness", description: null, position: 1, listings_count: 17,
+        seo: { meta_title: null, meta_description: null },
+        image_url: "https://admin.example.test/banner.webp",
+        card_cover_url: "https://admin.example.test/cover.webp",
+        card_cover_url_2x: "https://admin.example.test/cover@2x.webp",
+      } ] } },
+    ])
+
+    const categories = await api.categories.index()
+
+    expect(categories[0]?.image_url).toBe("https://admin.example.test/banner.webp")
+    expect(categories[0]?.card_cover_url).toBe("https://admin.example.test/cover.webp")
+    expect(categories[0]?.card_cover_url_2x).toBe("https://admin.example.test/cover@2x.webp")
+  })
+
+  it("treats a missing card cover as null rather than absent", async () => {
+    const { api } = client([
+      { body: { collection: [ {
+        slug: "wellness", name: "Wellness", description: null, position: 1, listings_count: 0,
+        seo: { meta_title: null, meta_description: null },
+        image_url: null, card_cover_url: null, card_cover_url_2x: null,
+      } ] } },
+    ])
+
+    const categories = await api.categories.index()
+
+    expect(categories[0]?.card_cover_url).toBeNull()
+    expect(categories[0]?.card_cover_url_2x).toBeNull()
+  })
+
   it("lists cities", async () => {
     const { api, calls } = client([
       { body: { collection: [ { slug: "berlin", name: "Berlin", listings_count: 3 } ] } },

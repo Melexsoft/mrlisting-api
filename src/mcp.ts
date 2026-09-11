@@ -97,7 +97,9 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: "create_listing",
-    description: "Create an entry. City is free text and resolved server-side. Created unpublished unless published=true.",
+    description:
+      "Create an entry. City is free text and resolved server-side, categories are given by slug. " +
+      "Created unpublished unless published=true.",
     scope: "listings.write",
     inputSchema: {
       type: "object",
@@ -106,6 +108,7 @@ export const TOOLS: ToolDefinition[] = [
         email: str("Contact email"), phone: str("Phone"), website: str("URL"),
         address: str("Street address"), postal_code: str("Postal code"), city_name: str("City, free text"),
         tag_list: str("Comma-separated tags, created on demand"),
+        category_slugs: { type: "array", items: { type: "string" }, description: "Category slugs, at most 5" },
         published: bool("Publish immediately"),
       },
       required: ["name"],
@@ -114,7 +117,7 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: "update_listing",
-    description: "Update an entry's attributes by slug.",
+    description: "Update an entry's attributes by slug. Passing category_slugs replaces its categories.",
     scope: "listings.write",
     inputSchema: {
       type: "object",
@@ -123,6 +126,7 @@ export const TOOLS: ToolDefinition[] = [
         description: str("Long text"), email: str("Contact email"), phone: str("Phone"), website: str("URL"),
         address: str("Street address"), postal_code: str("Postal code"), city_name: str("City, free text"),
         tag_list: str("Comma-separated tags; replaces the entry's tags"),
+        category_slugs: { type: "array", items: { type: "string" }, description: "Category slugs, at most 5" },
         published: bool("Published state"),
       },
       required: ["slug"],
@@ -150,6 +154,63 @@ export const TOOLS: ToolDefinition[] = [
     scope: "listings.delete",
     inputSchema: { type: "object", properties: { slug: str("The entry to delete") }, required: ["slug"] },
     call: (api, args) => api.request("DELETE", `/listings/${encodeURIComponent(String(args.slug))}`),
+  },
+  {
+    name: "list_records",
+    description:
+      "An entry's structured records (the rows of its schemas, e.g. Doctors). Optionally filter to one schema.",
+    scope: "listings.read",
+    inputSchema: {
+      type: "object",
+      properties: { slug: str("The entry"), schema: str("Only this schema's records"), page: { type: "number" } },
+      required: ["slug"],
+    },
+    call: (api, args) =>
+      api.request(
+        "GET",
+        `/listings/${encodeURIComponent(String(args.slug))}/records${query(args, ["schema", "page"])}`,
+      ),
+  },
+  {
+    name: "create_record",
+    description:
+      "Add a record to an entry. values is keyed by field key. Works for every cardinality, so one_to_many " +
+      "schemas can be filled here; image fields cannot be set through this API.",
+    scope: "listings.write",
+    inputSchema: {
+      type: "object",
+      properties: {
+        slug: str("The entry the record belongs to"),
+        schema: str("Schema key, e.g. doctors"),
+        values: { type: "object", description: "Field key to value", additionalProperties: true },
+        position: { type: "number", description: "Sort order within the schema" },
+      },
+      required: ["slug", "schema"],
+    },
+    call: (api, { slug, ...record }) =>
+      api.request("POST", `/listings/${encodeURIComponent(String(slug))}/records`, { record }),
+  },
+  {
+    name: "update_record",
+    description: "Change a record by id. Passing values updates only the field keys it names.",
+    scope: "listings.write",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "number", description: "The record" },
+        values: { type: "object", description: "Field key to value", additionalProperties: true },
+        position: { type: "number", description: "Sort order within the schema" },
+      },
+      required: ["id"],
+    },
+    call: (api, { id, ...record }) => api.request("PATCH", `/records/${encodeURIComponent(String(id))}`, { record }),
+  },
+  {
+    name: "delete_record",
+    description: "Delete a record permanently.",
+    scope: "listings.write",
+    inputSchema: { type: "object", properties: { id: { type: "number", description: "The record" } }, required: ["id"] },
+    call: (api, args) => api.request("DELETE", `/records/${encodeURIComponent(String(args.id))}`),
   },
   {
     name: "list_categories",

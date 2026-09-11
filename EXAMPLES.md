@@ -185,9 +185,28 @@ await api.categories.index()
     "position": 1,
     "listings_count": 17,
     "seo": { "meta_title": null, "meta_description": null },
-    "image_url": null
+    "image_url": "https://admin.example.com/rails/active_storage/…/wellness-hero.webp",
+    "card_cover_url": "https://admin.example.com/rails/active_storage/…/wellness-card.webp",
+    "card_cover_url_2x": "https://admin.example.com/rails/active_storage/…/wellness-card-2x.webp"
   }
 ]
+```
+
+`image_url` is the landscape banner for the category's own page, fitted within
+1200×600. `card_cover_url` is a separate portrait upload cropped to exactly
+220×274, with `card_cover_url_2x` the same crop at 440×548 — feed them to a
+`srcset` and every tile in a category grid lines up without letterboxing. All
+three are `null` when the administrator uploaded nothing, and the banner and the
+card cover are set independently of each other:
+
+```tsx
+<img
+  src={category.card_cover_url ?? category.image_url ?? "/placeholder.svg"}
+  srcSet={category.card_cover_url_2x ? `${category.card_cover_url} 1x, ${category.card_cover_url_2x} 2x` : undefined}
+  width={220}
+  height={274}
+  alt={category.name}
+/>
 ```
 
 ```ts

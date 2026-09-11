@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.0
+
+Categories gained a second, portrait image for card layouts.
+
+- `Category` now carries `card_cover_url` and `card_cover_url_2x` alongside the existing landscape `image_url`. The cover is a fill crop at exactly 220×274 (and 440×548 for the retina slot of a `srcset`), so a grid of category tiles shares one aspect ratio and never letterboxes
+- The two images are independent: either can be null, and an administrator may set one without the other. `image_url` keeps its meaning — the landscape banner heading the category's own page
+
 ## 0.4.0
 
 Guest conversations: the account-less side of a thread.

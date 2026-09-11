@@ -41,12 +41,14 @@ Every call's return value is documented with a realistic example payload in [EXA
 ```ts
 await api.listings.index({ q, category, city, page, per_page })  // → { items, pagination, filters }
 await api.listings.show(slug)
-await api.categories.index()
+await api.categories.index()     // → [{ slug, name, listings_count, image_url, card_cover_url, … }]
 await api.cities.index()
 await api.listingTypes.index()   // → [{ key, name, position }] for labels and type filters
 await api.site.show()
 await api.site.sitemap()
 ```
+
+A category carries two independent images. `image_url` is the landscape banner that heads the category's own page. `card_cover_url` is a portrait crop, always exactly 220×274, for grids and tiles where the category is one card among many — because it is a fill crop rather than a fit, every card cover in a grid shares the same aspect ratio and nothing needs letterboxing. `card_cover_url_2x` is the same crop at 440×548 for the `2x` slot of a `srcset`. Each is `null` when nothing was uploaded, and the two are set independently, so handle a banner without a cover and a cover without a banner.
 
 Contact details on a listing are `null` until someone claims the entry. An unclaimed entry is still fully listed — only its email, phone and address are withheld.
 

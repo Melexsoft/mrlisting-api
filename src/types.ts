@@ -130,7 +130,11 @@ export interface Category {
   position: number
   listings_count: number
   seo: { meta_title: string | null; meta_description: string | null }
+
   image_url: string | null
+
+  card_cover_url: string | null
+  card_cover_url_2x: string | null
 }
 
 export interface City {
