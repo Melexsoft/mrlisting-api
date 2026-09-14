@@ -1,6 +1,6 @@
 {
   "name": "@mrlisting/api",
-  "version": "0.8.0",
+  "version": "0.10.0",
   "description": "Connect a directory frontend to the MrListing API",
   "keywords": [
     "api",

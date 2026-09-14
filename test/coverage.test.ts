@@ -137,6 +137,41 @@ describe("me", () => {
     expect(user.name).toBe("Anna")
   })
 
+  it("registers an entry of one's own under the listing key", async () => {
+    const { api, calls } = client([
+      { status: 201, body: { resource: { slug: "schloss-finkenwerder", published: false,
+        visible: false, hidden_reason: "unpublished" } } },
+    ], "owner-jwt")
+
+    const listing = await api.me.createListing({
+      name: "Schloss Finkenwerder",
+      city_name: "Hamburg",
+      category_slugs: [ "schloss" ],
+      listing_type: "venue",
+    })
+
+    expect(calls[0]?.init.method).toBe("POST")
+    expect(calls[0]?.url).toContain("me/listings")
+    expect(JSON.parse(String(calls[0]?.init.body))).toEqual({
+      listing: {
+        name: "Schloss Finkenwerder",
+        city_name: "Hamburg",
+        category_slugs: [ "schloss" ],
+        listing_type: "venue",
+      },
+    })
+    expect(listing.published).toBe(false)
+    expect(listing.hidden_reason).toBe("unpublished")
+  })
+
+  it("carries the user token when registering an entry", async () => {
+    const { api, calls } = client([ { status: 201, body: { resource: { slug: "gut-rosenhof" } } } ])
+
+    await api.withUser("owner-jwt").me.createListing({ name: "Gut Rosenhof" })
+
+    expect((calls[0]?.init.headers as Record<string, string>)["X-User-Token"]).toBe("owner-jwt")
+  })
+
   it("edits an owned entry under the listing key", async () => {
     const { api, calls } = client([ { body: { resource: { slug: "cafe-adler" } } } ], "owner-jwt")
 

@@ -100,7 +100,9 @@ function buildClient(transport: Transport, config: ClientConfig) {
       update: (input: Parameters<typeof me.update>[1], userToken?: string) =>
         me.update(transport, input, userToken),
       listings: (userToken?: string) => me.listings(transport, userToken),
-      updateListing: (slug: string, input: Record<string, unknown>, userToken?: string) =>
+      createListing: (input: Parameters<typeof me.createListing>[1], userToken?: string) =>
+        me.createListing(transport, input, userToken),
+      updateListing: (slug: string, input: Parameters<typeof me.updateListing>[2], userToken?: string) =>
         me.updateListing(transport, slug, input, userToken),
       requestReview: (slug: string, input: Parameters<typeof me.requestReview>[2], userToken?: string) =>
         me.requestReview(transport, slug, input, userToken),

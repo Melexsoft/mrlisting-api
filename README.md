@@ -185,6 +185,33 @@ await asUser.me.updateListing("schloss-elmau", { short_description: "An alpine h
 
 An owner may edit their own copy. Publishing, ranking and ownership belong to the directory's editors and are rejected here.
 
+## Registering an entry of one's own
+
+A signed-in user who cannot find their entry in the directory adds it themselves:
+
+```ts
+const listing = await asUser.me.createListing({
+  name: "Schloss Finkenwerder",
+  city_name: "Hamburg",
+  postal_code: "21129",
+  short_description: "A castle by the river.",
+  category_slugs: [ "schloss", "trauung-im-freien" ],  // slugs from categories.index()
+  listing_type: "venue",                                // key from listingTypes.index()
+})
+
+listing.published      // false — always
+listing.hidden_reason  // "unpublished"
+```
+
+The entry is created **unpublished** and belongs to that user from the first
+save. Whether it goes live is the editors' call, so `published` in the input is
+ignored — a frontend that wants the editors to know should send its own
+notification (a form submission, say) after the call comes back.
+
+`category_slugs` and `listing_type` work the same way on `updateListing`: each
+replaces the whole assignment, an empty list clears it, and leaving the field
+out keeps what is there.
+
 ## An owner's images and extra fields
 
 The signed-in owner manages their entry's images through the API — gallery

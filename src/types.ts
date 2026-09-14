@@ -123,6 +123,39 @@ export interface OwnedListing extends Listing {
   tags: TagRef[]
 }
 
+/**
+ * What an owner may write on their own entry — when registering it through
+ * `me.createListing` and when editing it through `me.updateListing`.
+ *
+ * `published`, the ranking and ownership itself are not in here on purpose:
+ * the directory's editors decide those. A self-registered entry is always
+ * created unpublished.
+ */
+export interface OwnerListingInput {
+  name?: string
+  short_description?: string | null
+  description?: string | null
+  contact_full_name?: string | null
+  email?: string | null
+  phone?: string | null
+  website?: string | null
+  address?: string | null
+  postal_code?: string | null
+  city_name?: string | null
+  meta_title?: string | null
+  meta_description?: string | null
+  /** The `key` of an entry type (see `listingTypes.index`). "" clears it, omit to keep it. */
+  listing_type?: string | null
+  /**
+   * Category slugs (see `categories.index`) — ids are never handed out
+   * publicly. Replaces the whole set; an empty array clears it, omitting the
+   * field keeps the categories as they are. At most 5.
+   */
+  category_slugs?: string[]
+}
+
+export type OwnerListingCreateInput = OwnerListingInput & { name: string }
+
 export interface Category {
   slug: string
   name: string

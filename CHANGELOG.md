@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.10.0
+
+Owners can register an entry themselves — the missing half of claiming.
+
+- `me.createListing(input)`: a signed-in user adds their own entry. It is created **unpublished** and belongs to that user from the first save, so the directory's editors still decide whether it goes live — a `published` flag in the input is ignored. The user becomes a `listing_owner` and the entry's source is `self_registration`
+- `me.updateListing(slug, input)` and the new create both accept `category_slugs` (slugs, the way `categories.index` hands them out — ids are never public) and `listing_type` (the `key` from `listingTypes.index`). Both replace the whole assignment: an empty list clears it, leaving the field out keeps it
+- Both are typed now: `OwnerListingInput` and `OwnerListingCreateInput` replace the untyped `Record<string, unknown>` on `updateListing`
+
 ## 0.8.0
 
 Categories gained a second, portrait image for card layouts.

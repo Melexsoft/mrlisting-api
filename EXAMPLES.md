@@ -471,6 +471,7 @@ An array of `OwnedListing` — the public `Listing` shape plus the owner-only fi
 Every owner write answers with the full updated `OwnedListing`, so one call is enough to re-render:
 
 ```ts
+await asOwner.me.createListing({ name, city_name, category_slugs, listing_type })  // → OwnedListing, 201, always published: false
 await asOwner.me.updateListing(slug, { short_description })   // → OwnedListing
 await asOwner.me.addListingPhotos(slug, [file1, file2])       // → OwnedListing (photos included)
 await asOwner.me.removeListingPhoto(slug, photoId)            // → OwnedListing

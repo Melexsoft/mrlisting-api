@@ -1,7 +1,8 @@
 import { resource } from "../http.js"
 import type {
   CollectionEnvelope, DirectoryUser, Envelope, ListingRecord, OwnedListing,
-  OwnerRecordGroup, RecordValue, ReviewRequestReceipt, Transport,
+  OwnerListingCreateInput, OwnerListingInput, OwnerRecordGroup, RecordValue,
+  ReviewRequestReceipt, Transport,
 } from "../types.js"
 
 export async function show(transport: Transport, userToken?: string): Promise<DirectoryUser> {
@@ -22,10 +23,25 @@ export async function listings(transport: Transport, userToken?: string): Promis
   return payload.collection
 }
 
+/**
+ * Register an entry of one's own. It is created UNPUBLISHED and belongs to the
+ * signed-in user from the first save — the directory's editors decide whether
+ * it goes live, so a `published` flag in the input is ignored.
+ */
+export async function createListing(
+  transport: Transport,
+  input: OwnerListingCreateInput,
+  userToken?: string,
+): Promise<OwnedListing> {
+  return resource(
+    await transport.post<Envelope<OwnedListing>>("me/listings", { body: { listing: input }, userToken }),
+  )
+}
+
 export async function updateListing(
   transport: Transport,
   slug: string,
-  input: Record<string, unknown>,
+  input: OwnerListingInput,
   userToken?: string,
 ): Promise<OwnedListing> {
   return resource(
