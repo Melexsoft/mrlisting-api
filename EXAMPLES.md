@@ -209,8 +209,16 @@ card cover are set independently of each other:
 />
 ```
 
+An unpaginated read of the cities is capped at 100 rows, so a directory with
+more cities than that gets a SLICE — alphabetically, so everything past the cut
+is missing. `index` hands the `pagination` back so you can see it; `all` walks
+the pages and gives you the lot. Reach for `all` whenever a partial list would
+be wrong: a city picker, a sitemap, a slug lookup.
+
 ```ts
-await api.cities.index()
+await api.cities.all()                     // → City[] (every page)
+await api.cities.index()                   // → { items, pagination }
+await api.cities.index({ page: 2 })        // → the next page
 ```
 
 ```jsonc

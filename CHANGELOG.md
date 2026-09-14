@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.11.0
+
+Cities stop pretending a slice is the whole list.
+
+- **Breaking:** `cities.index(query?)` now answers `{ items, pagination }` instead of a bare `City[]`, and takes `page`/`per_page`. The API caps an unpaginated read at 100 rows, so any directory with more cities than that was silently handed the first 100 — alphabetically, so everything from "C" on simply did not exist for the caller. The pagination now says when there is more
+- `cities.all(perPage?)`: every city, pages walked for you. Use it wherever a partial list would be wrong — a city picker, a sitemap, a slug lookup
+- Migrating: `await api.cities.index()` → `await api.cities.all()` for the full list, or `(await api.cities.index()).items` to keep reading one page
+
+Note: `categories.index()`, `schemas.index()`, `listingTypes.index()`, `leadQuestions.index()` and `me.listings()` read the same capped endpoints and still return bare arrays. They are under the cap in practice today, but the same truncation applies above 100 rows.
+
 ## 0.10.0
 
 Owners can register an entry themselves — the missing half of claiming.

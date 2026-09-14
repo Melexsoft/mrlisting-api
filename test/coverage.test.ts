@@ -57,7 +57,53 @@ describe("content", () => {
     const cities = await api.cities.index()
 
     expect(calls[0]?.url).toContain("/cities")
-    expect(cities[0]?.slug).toBe("berlin")
+    expect(cities.items[0]?.slug).toBe("berlin")
+  })
+
+  it("hands back the pagination instead of hiding that the list is a slice", async () => {
+    const { api } = client([
+      { body: {
+        collection: [ { slug: "aachen", name: "Aachen", listings_count: 2 } ],
+        pagination: { current: 1, previous: null, next: 2, per_page: 100, pages: 7, count: 699 },
+      } },
+    ])
+
+    const cities = await api.cities.index()
+
+    expect(cities.pagination?.pages).toBe(7)
+    expect(cities.pagination?.count).toBe(699)
+  })
+
+  it("walks every page for cities.all", async () => {
+    const page = (slug: string, current: number, pages: number) => ({
+      body: {
+        collection: [ { slug, name: slug, listings_count: 1 } ],
+        pagination: { current, previous: current > 1 ? current - 1 : null,
+          next: current < pages ? current + 1 : null, per_page: 100, pages, count: pages },
+      },
+    })
+    const { api, calls } = client([ page("aachen", 1, 3), page("hamburg", 2, 3), page("zuerich", 3, 3) ])
+
+    const all = await api.cities.all()
+
+    expect(calls).toHaveLength(3)
+    expect(calls[1]?.url).toContain("page=2")
+    expect(calls[2]?.url).toContain("page=3")
+    expect(all.map((city) => city.slug)).toEqual([ "aachen", "hamburg", "zuerich" ])
+  })
+
+  it("asks once when a single page holds every city", async () => {
+    const { api, calls } = client([
+      { body: {
+        collection: [ { slug: "berlin", name: "Berlin", listings_count: 3 } ],
+        pagination: { current: 1, previous: null, next: null, per_page: 100, pages: 1, count: 1 },
+      } },
+    ])
+
+    const all = await api.cities.all()
+
+    expect(calls).toHaveLength(1)
+    expect(all).toHaveLength(1)
   })
 
   it("reads a form's field definitions", async () => {

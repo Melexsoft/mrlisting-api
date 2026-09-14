@@ -77,7 +77,8 @@ function buildClient(transport: Transport, config: ClientConfig) {
     },
 
     cities: {
-      index: () => cities.index(transport),
+      index: (query?: PageQuery) => cities.index(transport, query),
+      all: (perPage?: number) => cities.all(transport, perPage),
     },
 
     forms: {

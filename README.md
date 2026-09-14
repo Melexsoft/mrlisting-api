@@ -42,7 +42,8 @@ Every call's return value is documented with a realistic example payload in [EXA
 await api.listings.index({ q, category, city, page, per_page })  // → { items, pagination, filters }
 await api.listings.show(slug)
 await api.categories.index()     // → [{ slug, name, listings_count, image_url, card_cover_url, … }]
-await api.cities.index()
+await api.cities.all()           // → every city, pages walked for you
+await api.cities.index({ page })  // → { items, pagination } for one page at a time
 await api.listingTypes.index()   // → [{ key, name, position }] for labels and type filters
 await api.site.show()
 await api.site.sitemap()
