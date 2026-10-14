@@ -316,3 +316,31 @@ describe("products", () => {
     expect(error.isNotFound).toBe(true)
   })
 })
+
+describe("score and enrichment", () => {
+  it("carries the directory's score and the approved enrichment of an entry", async () => {
+    const { api } = client([
+      { body: { resource: {
+        slug: "nordkontor", name: "Nordkontor", claimed: false,
+        score: { value: 78, band: "high", data_basis: 0.8, computed_at: "2026-10-13T08:00:00Z" },
+        enrichment: { summary: "Nordkontor baut Websites.", services: [ { name: "Webdesign", sentence: "Gestaltet Websites." } ],
+          founding_year: 2010, source: "website", ai_generated: true },
+      } } },
+    ])
+
+    const listing = await api.listings.show("nordkontor")
+
+    expect(listing.score?.band).toBe("high")
+    expect(listing.enrichment?.services?.[0]?.name).toBe("Webdesign")
+    expect(listing.enrichment?.ai_generated).toBe(true)
+  })
+
+  it("passes a withheld score through as null", async () => {
+    const { api } = client([ { body: { collection: [ { slug: "a", name: "A", score: null } ] } } ])
+
+    const page = await api.listings.index()
+    const cards = Array.isArray(page) ? page : page.items
+
+    expect(cards[0]?.score).toBeNull()
+  })
+})

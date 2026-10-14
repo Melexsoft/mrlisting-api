@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.12.0
+
+Entries can carry the directory's own quality score and crawler-collected facts.
+
+- `ListingCard.score` (`{ value, band }`) and `Listing.score` (`{ value, band, data_basis, computed_at }`): a weighted 0–100 score each directory configures itself. It is `null` while the directory has enrichment switched off or there is not yet enough evidence to publish one
+- `Listing.enrichment`: facts read from the entry's own website — a neutral `summary`, `services`, `founding_year`, `legal_form`, `opening_hours`, `languages`, `certificates`, `locations` and, if enabled, an `external_rating` from Google that must be attributed when shown. Served only after the directory approved the data (or publishes without review), never when it was blocked. `ai_generated` says whether summary and services were written by an AI. `socials` stay hidden on unclaimed entries, like their other contact details
+- The enrichment is never merged into the entry's own fields: show it as a supplement, or as a fallback where the owner wrote nothing
+- `OwnedListing.score` is the full breakdown (`components`, `missing`) so an owner can see what would raise it, and `OwnedListing.enrichment_mode` tells whether the crawler may touch the entry
+
 ## 0.11.0
 
 Cities stop pretending a slice is the whole list.
