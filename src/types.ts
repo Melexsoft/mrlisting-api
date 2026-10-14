@@ -72,6 +72,7 @@ export interface ListingCard {
   rating_average: string | null
   reviews_count: number
   claimed: boolean
+  score: ListingScoreSummary | null
   categories: CategoryRef[]
 
   tags: TagRef[]
@@ -99,7 +100,70 @@ export interface Seo {
   indexable: boolean
 }
 
-export interface Listing extends ListingCard {
+export type ScoreBand = "excellent" | "very_high" | "high" | "solid" | "basic"
+
+export type ScoreArea = "reputation" | "substance" | "identity" | "presence" | "risk"
+
+export interface ListingScoreSummary {
+  value: number
+  band: ScoreBand
+}
+
+export interface ListingScore extends ListingScoreSummary {
+  data_basis: number
+  computed_at: string
+}
+
+export interface ScoreComponent {
+  area: ScoreArea
+  value: number
+  weight: number
+  contribution: number
+  source: string
+}
+
+export interface ListingScoreBreakdown {
+  value: number | null
+  band: ScoreBand | null
+  data_basis: number
+  components: Record<string, ScoreComponent>
+  missing: string[]
+  computed_at: string
+}
+
+export interface OpeningHoursSpecification {
+  days: string[]
+  opens: string
+  closes: string
+}
+
+export interface ExternalRating {
+  source: "google"
+  rating: number
+  count: number
+  fetched_at: string
+}
+
+export interface ListingEnrichment {
+  summary?: string
+  services?: { name: string; sentence: string }[]
+  founding_year?: number
+  employee_band?: "solo" | "micro" | "small" | "medium" | "large"
+  certificates?: string[]
+  locations?: string[]
+  legal_form?: string
+  opening_hours?: (string | OpeningHoursSpecification)[]
+  languages?: string[]
+  socials?: Record<string, string>
+  external_rating?: ExternalRating
+  source: "website"
+  ai_generated: boolean
+  crawled_at?: string
+}
+
+export interface Listing extends Omit<ListingCard, "score"> {
+  score: ListingScore | null
+  enrichment: ListingEnrichment | null
   description: string | null
   email: string | null
   phone: string | null
@@ -111,7 +175,9 @@ export interface Listing extends ListingCard {
   seo: Seo
 }
 
-export interface OwnedListing extends Listing {
+export interface OwnedListing extends Omit<Listing, "score"> {
+  score: ListingScoreBreakdown | null
+  enrichment_mode: "inherit" | "enabled" | "excluded"
   published: boolean
   visible: boolean
   hidden_reason: "unpublished" | "account_suspended" | null
