@@ -9,6 +9,8 @@ Entries can carry the directory's own quality score and crawler-collected facts.
 - The enrichment is never merged into the entry's own fields: show it as a supplement, or as a fallback where the owner wrote nothing
 - `OwnedListing.score` is the full breakdown (`components`, `missing`) so an owner can see what would raise it, and `OwnedListing.enrichment_mode` tells whether the crawler may touch the entry
 
+No calls changed: the new fields arrive on `listings.index`, `listings.show` and `me.listings` as soon as the directory switches enrichment on. Usage and display rules are in the README under "Quality score and enrichment", example payloads in EXAMPLES.md.
+
 ## 0.11.0
 
 Cities stop pretending a slice is the whole list.

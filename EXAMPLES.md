@@ -90,7 +90,8 @@ await api.listings.index({ city: "garmisch-partenkirchen", page: 1 })
       "tags": [{ "slug": "familienfreundlich", "name": "Familienfreundlich" }],
       "coordinates": { "latitude": 47.4632, "longitude": 11.1856 },
       "logo_url": "https://admin.example.com/rails/active_storage/…/logo-card.webp",
-      "image_url": "https://admin.example.com/rails/active_storage/…/banner-narrow.webp"
+      "image_url": "https://admin.example.com/rails/active_storage/…/banner-narrow.webp",
+      "score": { "value": 84, "band": "very_high" }   // null while enrichment is off or evidence is thin
     }
   ],
   "pagination": { "current": 1, "previous": null, "next": null, "per_page": 25, "pages": 1, "count": 1 },
@@ -134,9 +135,31 @@ Everything a card has, plus the profile fields. Contact details are `null` until
       "hero_url": "https://admin.example.com/rails/active_storage/…/photo-hero.webp"
     }
   ],
-  "seo": { "meta_title": "Schloss Elmau – Wellness in Elmau", "meta_description": null, "indexable": true }
+  "seo": { "meta_title": "Schloss Elmau – Wellness in Elmau", "meta_description": null, "indexable": true },
+  "score": {                                   // null while enrichment is off or evidence is thin
+    "value": 84,
+    "band": "very_high",                       // excellent | very_high | high | solid | basic
+    "data_basis": 0.82,                        // share of the weighted evidence that was available
+    "computed_at": "2026-10-13T04:30:12Z"
+  },
+  "enrichment": {                              // null until approved; every field below is optional
+    "summary": "Hotel mit Spa und Konzertsaal am Fuß des Wettersteins.",
+    "services": [{ "name": "Spa", "sentence": "Sechs Saunen und ein Hamam im Haus." }],
+    "founding_year": 1916,
+    "employee_band": "large",                  // solo | micro | small | medium | large
+    "legal_form": "GmbH",
+    "opening_hours": [{ "days": ["Monday", "Tuesday"], "opens": "07:00", "closes": "22:00" }],
+    "languages": ["de", "en"],
+    "socials": { "instagram": "https://instagram.com/schlosselmau" },   // claimed entries only
+    "external_rating": { "source": "google", "rating": 4.6, "count": 212, "fetched_at": "2026-10-10T05:00:03Z" },
+    "source": "website",
+    "ai_generated": true,                      // summary and services were written by an AI
+    "crawled_at": "2026-10-12T14:20:44Z"
+  }
 }
 ```
+
+`score` and `enrichment` come from the directory's own crawler and are never merged into the entry's fields — show the enrichment as a supplement, or as a fallback where the owner wrote nothing.
 
 ```ts
 await api.listings.search({ schema: "shareholders", filters: [{ field: "share_percent", operator: "gt", value: 25 }] })
@@ -471,7 +494,19 @@ An array of `OwnedListing` — the public `Listing` shape plus the owner-only fi
     "meta_title": null,
     "meta_description": null,
     "noindex": false,
-    "contact_full_name": "Max Berger"
+    "contact_full_name": "Max Berger",
+    "enrichment_mode": "inherit",   // inherit | enabled | excluded — whether the crawler may touch the entry
+    "score": {                      // the full breakdown instead of the public summary
+      "value": 84,
+      "band": "very_high",
+      "data_basis": 0.82,
+      "components": {
+        "review_quality": { "area": "reputation", "value": 92.5, "weight": 3, "contribution": 16.3, "source": "reviews+google" },   // contribution = points of the score
+        "negative_mentions": { "area": "risk", "value": 0, "weight": -2, "contribution": 0, "source": "web" }
+      },
+      "missing": ["register", "certificates"],   // criteria without data — what would raise the score
+      "computed_at": "2026-10-13T04:30:12Z"
+    }
   }
 ]
 ```

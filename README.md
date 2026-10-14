@@ -53,6 +53,27 @@ A category carries two independent images. `image_url` is the landscape banner t
 
 Contact details on a listing are `null` until someone claims the entry. An unclaimed entry is still fully listed — only its email, phone and address are withheld.
 
+### Quality score and enrichment
+
+A directory can switch on enrichment: a crawler reads each entry's own website (and, if enabled, its Google rating and mentions elsewhere) and the directory computes a 0–100 quality score from it, with weights it sets itself.
+
+```ts
+const { items } = await api.listings.index()
+items[0].score            // → { value: 84, band: "very_high" } or null
+
+const entry = await api.listings.show("schloss-elmau")
+entry.score               // → { value, band, data_basis, computed_at } or null
+entry.enrichment          // → { summary, services, founding_year, opening_hours, external_rating, ai_generated, … } or null
+```
+
+- `score` is `null` while the directory has enrichment off or there is not yet enough evidence to publish one. Treat `null` as "no score", never as zero. `band` (`excellent`, `very_high`, `high`, `solid`, `basic`) is the label to show; `data_basis` (0–1) says how much of the evidence was available.
+- `enrichment` is served only once the directory approved it (or publishes without review). Every field inside is optional — render what is there.
+- It is a supplement, never the entry's own data: the owner's `description` always wins; use `enrichment.summary` only where the owner wrote nothing, and mark it as such when `ai_generated` is `true`.
+- `external_rating` comes from Google: show it with its source ("Google, 4.6 from 212 ratings"), never mixed into `rating_average`.
+- `socials` are withheld on unclaimed entries, like the other contact details.
+
+Owners get the full breakdown through `me.listings()`: `score.components` (per criterion: `value`, `weight`, `contribution`, `source`) and `score.missing` — the criteria with no data yet, which is exactly the "how do I improve my score" list.
+
 ### Building a sitemap
 
 Every entry carries an `indexable` flag. A page below the thin-content threshold still gets a link; it just should not be indexed.
