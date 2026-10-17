@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.13.0
+
+Availability alerts: "tell me when this entry becomes available".
+
+- `watches.create({ email, listingSlug | citySlug, source?, honeypot? })` starts a double opt-in alert and mails the confirmation link. The answer is always `{ status: "pending" }`, so the endpoint never reveals who is signed up
+- `watches.confirm(token)` and `watches.unsubscribe(token)` for the pages the emails link to. Unsubscribing deletes the address
+- `ListingCard.watchers_count` (also on `Listing` and `OwnedListing`) and `City.watchers_count`: confirmed people still waiting
+- When an entry starts meeting the directory's availability rule, everyone waiting on it (or on its city) is mailed once, automatically
+
+No existing calls changed. See "Availability alerts" in the README.
+
 ## 0.12.0
 
 Entries can carry the directory's own quality score and crawler-collected facts.

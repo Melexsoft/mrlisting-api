@@ -15,9 +15,10 @@ import * as reviews from "./endpoints/reviews.js"
 import * as schemas from "./endpoints/schemas.js"
 import * as site from "./endpoints/site.js"
 import * as subscriptions from "./endpoints/subscriptions.js"
+import * as watches from "./endpoints/watches.js"
 import { createTransport } from "./http.js"
 import type {
-  ArticleQuery, ClientConfig, LeadAnswerValue, ListingQuery, PageQuery, Transport,
+  ArticleQuery, ClientConfig, LeadAnswerValue, ListingQuery, PageQuery, Transport, WatchInput,
 } from "./types.js"
 
 export { ApiError } from "./errors.js"
@@ -156,6 +157,12 @@ function buildClient(transport: Transport, config: ClientConfig) {
         conversations.messages(transport, id, query, userToken),
       sendConversationMessage: (id: number, body: string, userToken?: string) =>
         conversations.sendMessage(transport, id, body, userToken),
+    },
+
+    watches: {
+      create: (input: WatchInput) => watches.create(transport, input),
+      confirm: (token: string) => watches.confirm(transport, token),
+      unsubscribe: (token: string) => watches.unsubscribe(transport, token),
     },
 
     claims: {

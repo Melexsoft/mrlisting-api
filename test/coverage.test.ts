@@ -344,3 +344,50 @@ describe("score and enrichment", () => {
     expect(cards[0]?.score).toBeNull()
   })
 })
+
+describe("availability alerts", () => {
+  it("starts an alert on an entry with the honeypot passed through", async () => {
+    const { api, calls } = client([ { status: 202, body: { resource: { status: "pending" } } } ])
+
+    const result = await api.watches.create({
+      email: "kim@example.com", listingSlug: "stadt-apotheke", source: "listing-page", honeypot: "",
+    })
+
+    expect(calls[0]?.url).toBe("https://admin.example.test/api/v1/watches")
+    expect(calls[0]?.init.method).toBe("POST")
+    expect(JSON.parse(String(calls[0]?.init.body))).toEqual({
+      email: "kim@example.com", listing_slug: "stadt-apotheke", source: "listing-page",
+    })
+    expect(result.status).toBe("pending")
+  })
+
+  it("watches a city", async () => {
+    const { api, calls } = client([ { status: 202, body: { resource: { status: "pending" } } } ])
+
+    await api.watches.create({ email: "kim@example.com", citySlug: "heilbronn" })
+
+    expect(JSON.parse(String(calls[0]?.init.body))).toEqual({ email: "kim@example.com", city_slug: "heilbronn" })
+  })
+
+  it("confirms and unsubscribes by token", async () => {
+    const { api, calls } = client([
+      { body: { resource: { status: "confirmed",
+        target: { type: "listing", slug: "stadt-apotheke", name: "Stadt-Apotheke" } } } },
+      { body: { resource: { status: "deleted" } } },
+    ])
+
+    const confirmed = await api.watches.confirm("tok/1")
+    const gone = await api.watches.unsubscribe("tok2")
+
+    expect(calls[0]?.url).toContain("/watches/confirm/tok%2F1")
+    expect(confirmed.target?.name).toBe("Stadt-Apotheke")
+    expect(calls[1]?.url).toContain("/watches/unsubscribe/tok2")
+    expect(gone.status).toBe("deleted")
+  })
+
+  it("raises ApiError for an expired link", async () => {
+    const { api } = client([ { status: 404, body: { errors: [ "Not found" ] } } ])
+
+    await expect(api.watches.confirm("old")).rejects.toMatchObject({ status: 404 })
+  })
+})

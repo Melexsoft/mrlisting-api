@@ -71,6 +71,8 @@ export interface ListingCard {
   listing_type: string | null
   rating_average: string | null
   reviews_count: number
+  /** People with a confirmed "tell me when this entry becomes available" alert who are still waiting. */
+  watchers_count: number
   claimed: boolean
   score: ListingScoreSummary | null
   categories: CategoryRef[]
@@ -242,6 +244,8 @@ export interface City {
   postal_code: string | null
   country_iso: string
   listings_count: number
+  /** Confirmed city-wide availability alerts (alerts on single entries are counted on the entry). */
+  watchers_count: number
   coordinates: Coordinates | null
 }
 
@@ -640,4 +644,20 @@ export interface ListingSearchInput {
   filters?: ListingSearchFilter[] | undefined
   page?: number | undefined
   per_page?: number | undefined
+}
+
+/** Starts an availability alert. Give either `listingSlug` or `citySlug`. */
+export interface WatchInput {
+  email: string
+  listingSlug?: string
+  citySlug?: string
+  /** Free label for where the sign-up happened, e.g. "listing-page". Max 60 characters. */
+  source?: string
+  /** Value of the hidden honeypot field; anything here files the request as a bot. */
+  honeypot?: string
+}
+
+export interface WatchConfirmation {
+  status: "confirmed" | "notified"
+  target: { type: "listing" | "city"; slug: string; name: string } | null
 }

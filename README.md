@@ -141,6 +141,30 @@ await api.forms.submit("contact", {
 
 A `regional_inquiry` form reaches every matching entry owner; a `direct_inquiry` reaches the one it was sent from. Which fields are matched on is the directory's configuration, not yours.
 
+## Availability alerts
+
+Visitors can ask to be told by email once an entry becomes available — what "available" means is a rule the directory sets (agent API `PATCH /settings` with `watch_availability`). It is double opt-in: nothing counts and nothing is sent until the visitor confirms the link from the first email.
+
+```ts
+// From your server, never the browser: the API token stays secret.
+await api.watches.create({
+  email,
+  listingSlug: "stadt-apotheke", // or citySlug: "heilbronn" for any entry in a city
+  source: "listing-page",
+  honeypot: form.get("company_website"), // render hidden, leave empty
+})
+// → { status: "pending" } — the same answer whether the address was new, already waiting or rate-limited
+```
+
+The emails link to your frontend; set the paths under the directory's URL settings (`watch_confirm`, `watch_unsubscribe`, `listing`). Those pages call:
+
+```ts
+const { target } = await api.watches.confirm(token)   // 404 once the link is older than 7 days
+await api.watches.unsubscribe(token)                  // deletes the address
+```
+
+Let a person press a button before you call either — mail scanners open links on their own. `ListingCard.watchers_count` and `City.watchers_count` hold the confirmed people still waiting, if you want to show demand.
+
 ## Reviews
 
 ```ts
