@@ -326,6 +326,13 @@ export const TOOLS: ToolDefinition[] = [
         conversation_product_key: str(
           "Product key an entry owner must hold (subscription or paid one-off) before answering this form's inquiries; empty string lifts the gate",
         ),
+        match_mode: str(
+          "Regional inquiries: limited (at most max_notified_owners, holders of conversation_product_key first) | all_matches (every matching owner)",
+        ),
+        max_notified_owners: { type: "number", description: "Regional inquiries in limited mode: how many owners at most" },
+        match_required_product_key: str("Regional inquiries only reach owners holding this product; empty string removes the condition"),
+        match_min_rating: { type: "number", description: "Regional inquiries only reach entries rated at least this (1–5)" },
+        match_min_reviews: { type: "number", description: "Regional inquiries only reach entries with at least this many reviews" },
         fields: { type: "array", description: "Replacement field definitions", items: { type: "object" } },
       },
       required: ["key"],
