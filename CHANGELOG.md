@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.14.0
+
+Regional inquiries can go to every matching owner, not just the best few.
+
+- MCP `update_form` takes the form's distribution settings: `match_mode` (`limited` = at most `max_notified_owners`, holders of `conversation_product_key` first; `all_matches` = every matching owner right away), `max_notified_owners`, `match_required_product_key` (only owners holding that product), `match_min_rating` and `match_min_reviews`
+- `get_form` / `list_forms` return the same settings (needs MrListing with the matching agent API)
+
+No SDK calls changed.
+
 ## 0.13.0
 
 Availability alerts: "tell me when this entry becomes available".
